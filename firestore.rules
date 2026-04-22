@@ -1,0 +1,108 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- PRIMITIVE HELPERS ---
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+
+    // --- VALIDATION BLUEPRINTS ---
+    
+    function isValidProfile(data) {
+      return data.keys().hasAll(['schoolName', 'hourGoal', 'onboarded']) &&
+             data.schoolName is string && data.schoolName.size() <= 200 &&
+             data.hourGoal is number && data.hourGoal >= 0 &&
+             data.onboarded is bool &&
+             (data.get('displayName', '') is string && data.get('displayName', '').size() <= 200) &&
+             (data.get('email', '') is string && data.get('email', '').size() <= 200) &&
+             (data.get('state', null) == null || (data.get('state', '') is string && data.get('state', '').size() <= 128)) &&
+             (data.get('grade', null) == null || (data.get('grade', '') is string && data.get('grade', '').size() <= 128)) &&
+             (data.get('locationAllowed', null) == null || data.get('locationAllowed', false) is bool) &&
+             (data.get('bio', '') is string && data.get('bio', '').size() <= 1000) &&
+             (data.get('following', []) is list) &&
+             (data.get('followers', []) is list);
+    }
+
+    function isValidActivity(data) {
+      return data.keys().hasAll(['title', 'hours', 'date', 'createdAt']) &&
+             data.title is string && data.title.size() <= 200 &&
+             data.hours is number && data.hours >= 0 &&
+             data.date is string && data.date.size() <= 20 &&
+             data.createdAt is timestamp &&
+             (data.get('description', '') is string && data.get('description', '').size() <= 5000);
+    }
+
+    function isValidBookmark(data) {
+      return data.keys().hasAll(['title', 'organization', 'url', 'savedAt']) &&
+             data.title is string && data.title.size() <= 200 &&
+             data.organization is string && data.organization.size() <= 200 &&
+             data.url is string && data.url.size() <= 500 &&
+             data.savedAt is timestamp &&
+             (data.get('location', '') is string && data.get('location', '').size() <= 200) &&
+             (data.get('hours', '') is string && data.get('hours', '').size() <= 50) &&
+             (data.get('tags', []) is list);
+    }
+    
+    function isValidCommunityPost(data) {
+      return data.keys().hasAll(['authorId', 'authorName', 'title', 'content', 'region', 'createdAt', 'type']) &&
+             data.authorName is string && data.authorName.size() <= 100 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.content is string && data.content.size() <= 5000 &&
+             data.region is string && data.region.size() <= 50 &&
+             data.createdAt is timestamp &&
+             data.type in ['announcement', 'achievement', 'idea', 'event', 'general'] &&
+             (data.get('imageUrl', '') is string && data.get('imageUrl', '').size() <= 1000) &&
+             (data.get('externalUrl', '') is string && data.get('externalUrl', '').size() <= 1000) &&
+             (data.get('authorSchool', '') is string && data.get('authorSchool', '').size() <= 200) &&
+             (data.get('tags', []) is list) &&
+             (data.get('likes', []) is list) &&
+             (data.get('commentCount', 0) is int || data.get('commentCount', 0) is float);
+    }
+
+    // --- COLLECTION RULES ---
+
+    // User Profiles
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow create: if isOwner(userId) && isValidProfile(incoming());
+      allow update: if (isOwner(userId) && isValidProfile(incoming())) || 
+                       (isSignedIn() && incoming().diff(existing()).affectedKeys().hasOnly(['followers']));
+
+      // Volunteer Activities Subcollection
+      match /activities/{activityId} {
+        allow list, get: if isSignedIn();
+        allow create: if isOwner(userId) && isValidActivity(incoming());
+        allow update: if isOwner(userId) && isValidActivity(incoming()) && 
+                        incoming().createdAt == existing().createdAt;
+        allow delete: if isOwner(userId);
+      }
+
+      // Bookmarks Subcollection
+      match /bookmarks/{bookmarkId} {
+        allow list, get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidBookmark(incoming());
+        allow update: if false; // Bookmarks are generally immutable (just delete/add)
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    // Community Posts
+    match /community_posts/{postId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidCommunityPost(incoming()) && incoming().authorId == request.auth.uid;
+      allow update: if (isSignedIn() && isOwner(existing().authorId) && isValidCommunityPost(incoming())) ||
+                       (isSignedIn() && incoming().diff(existing()).affectedKeys().hasOnly(['likes']));
+      allow delete: if isSignedIn() && isOwner(existing().authorId);
+    }
+  }
+}

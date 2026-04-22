@@ -1,0 +1,8 @@
+{
+  "name": "VolunteerTracker",
+  "description": "A high-energy civic engagement portal for high schoolers to find, track, and share their community impact.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": []
+}

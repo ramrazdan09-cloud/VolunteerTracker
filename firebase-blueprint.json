@@ -1,0 +1,90 @@
+{
+  "entities": {
+    "userProfile": {
+      "title": "User Profile",
+      "description": "Stores user-specific settings, school info, and goals.",
+      "type": "object",
+      "properties": {
+        "schoolName": { "type": "string" },
+        "hourGoal": { "type": "number" },
+        "onboarded": { "type": "boolean" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "state": { "type": "string" },
+        "grade": { "type": "string" },
+        "locationAllowed": { "type": "boolean" },
+        "bio": { "type": "string", "description": "User introduction or description." },
+        "following": { "type": "array", "items": { "type": "string" }, "description": "List of user IDs this user is following." },
+        "followers": { "type": "array", "items": { "type": "string" }, "description": "List of user IDs following this user." }
+      },
+      "required": ["schoolName", "hourGoal", "onboarded"]
+    },
+    "volunteerActivity": {
+      "title": "Volunteer Activity",
+      "description": "A record of community service performed by the user.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "hours": { "type": "number" },
+        "date": { "type": "string", "format": "date" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "hours", "date", "createdAt"]
+    },
+    "volunteerBookmark": {
+      "title": "Volunteer Bookmark",
+      "description": "A saved volunteer opportunity for later reference.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "organization": { "type": "string" },
+        "url": { "type": "string" },
+        "location": { "type": "string" },
+        "hours": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "savedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "organization", "url", "savedAt"]
+    },
+    "communityPost": {
+      "title": "Community Post",
+      "description": "A post shared by a student in a specific region.",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorSchool": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "imageUrl": { "type": "string", "description": "Optional image URL for the post." },
+        "externalUrl": { "type": "string", "description": "Optional link to external sites or social media." },
+        "type": { "type": "string", "enum": ["announcement", "achievement", "idea", "event", "general"] },
+        "region": { "type": "string", "description": "The state or city for filtering." },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "likes": { "type": "array", "items": { "type": "string" }, "description": "Array of user IDs who liked the post." },
+        "commentCount": { "type": "number", "description": "Total number of comments on this post." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorId", "authorName", "title", "content", "region", "createdAt", "type"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "userProfile",
+      "description": "Individual user profile documents."
+    },
+    "users/{userId}/activities/{activityId}": {
+      "schema": "volunteerActivity",
+      "description": "Collection of community service records for a user."
+    },
+    "users/{userId}/bookmarks/{bookmarkId}": {
+      "schema": "volunteerBookmark",
+      "description": "Saved opportunities for a user."
+    },
+    "community_posts/{postId}": {
+      "schema": "communityPost",
+      "description": "Public posts visible to users in the same region."
+    }
+  }
+}
