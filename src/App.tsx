@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { auth, getUserProfile, saveUserProfile, UserProfile } from './lib/firebase';
 import { cn } from './lib/utils';
+import { LayoutDashboard, Compass, Users, UserCircle } from 'lucide-react';
 import { fetchNearbyOpportunities, VolunteerOpportunity } from './services/opportunityService';
 import { 
   ExploreView,
@@ -58,7 +59,10 @@ export default function App() {
       locationAllowed: locationAllowed ?? false,
       onboarded: true,
       displayName: username || user.displayName || 'Volunteer',
-      email: user.email || ''
+      email: user.email || '',
+      bio: '',
+      following: [],
+      followers: []
     };
     await saveUserProfile(user.uid, newProfile);
     setProfile(newProfile);
@@ -139,7 +143,7 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <div className="relative z-10 pt-20 min-h-screen">
+      <div className="relative z-10 pt-20 min-h-screen pb-24 md:pb-0">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentScreen}
@@ -173,6 +177,48 @@ export default function App() {
             )}
           </motion.div>
         </AnimatePresence>
+
+        {/* Mobile Navigation Bar */}
+        <div className="fixed bottom-6 left-6 right-6 z-[100] md:hidden">
+          <div className="bg-black/90 backdrop-blur-xl border border-white/10 rounded-3xl p-3 shadow-2xl flex justify-around items-center">
+            <button 
+              onClick={() => navigateTo('dashboard')}
+              className={cn(
+                "p-4 rounded-2xl transition-all",
+                currentScreen === 'dashboard' ? "bg-orange-600 text-white" : "text-gray-400"
+              )}
+            >
+              <LayoutDashboard size={20} />
+            </button>
+            <button 
+              onClick={() => navigateTo('explore')}
+              className={cn(
+                "p-4 rounded-2xl transition-all",
+                currentScreen === 'explore' ? "bg-orange-600 text-white" : "text-gray-400"
+              )}
+            >
+              <Compass size={20} />
+            </button>
+            <button 
+              onClick={() => navigateTo('community')}
+              className={cn(
+                "p-4 rounded-2xl transition-all",
+                currentScreen === 'community' ? "bg-orange-600 text-white" : "text-gray-400"
+              )}
+            >
+              <Users size={20} />
+            </button>
+            <button 
+              onClick={() => navigateTo('profile')}
+              className={cn(
+                "p-4 rounded-2xl transition-all",
+                currentScreen === 'profile' || currentScreen === 'publicProfile' ? "bg-orange-600 text-white" : "text-gray-400"
+              )}
+            >
+              <UserCircle size={20} />
+            </button>
+          </div>
+        </div>
 
         <footer className="max-w-screen-xl mx-auto px-12 py-12 border-t border-gray-100 mt-24">
            <div className="flex justify-between items-center text-xs font-bold text-gray-300 uppercase tracking-widest">

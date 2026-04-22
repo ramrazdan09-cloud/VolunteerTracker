@@ -1,6 +1,17 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let aiClient: GoogleGenAI | null = null;
+
+function getAI() {
+  if (!aiClient) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is missing in the environment");
+    }
+    aiClient = new GoogleGenAI({ apiKey });
+  }
+  return aiClient;
+}
 
 export interface VolunteerOpportunity {
   id: string;
@@ -12,10 +23,13 @@ export interface VolunteerOpportunity {
   location: string;
   hours: string;
   tags: string[];
+  date?: string; // ISO format or human readable string
+  coords?: { lat: number; lng: number };
 }
 
 export async function fetchNearbyOpportunities(location: string, coords?: { lat: number; lng: number }, state?: string | null): Promise<VolunteerOpportunity[]> {
   try {
+    const ai = getAI();
     let locationContext = coords 
       ? `near coordinates (${coords.lat}, ${coords.lng})` 
       : `in or near ${location}`;
@@ -24,15 +38,15 @@ export async function fetchNearbyOpportunities(location: string, coords?: { lat:
       locationContext += ` in the state of ${state}`;
     }
 
-    const prompt = `Find 5-7 real, current community service websites or organizations for high school students ${locationContext}.
+    const prompt = `Find 7-10 real, current community service websites or organizations for high school students ${locationContext}.
     Provide the response as a JSON array of objects with the following keys:
-    title (event/org name), organization, organizationMission (brief 1-2 sentence mission or description of work), description (short, engaging event description), url (direct link), location, hours (est per event), tags (array of 2-3 categories).`;
+    title (event/org name), organization, organizationMission (brief 1-2 sentence mission or description of work), description (short, engaging event description), url (direct link), location, hours (est per event), tags (array of 2-3 categories), date (approximate next date in YYYY-MM-DD format if applicable, otherwise today's date), latitude, longitude.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
-        systemInstruction: "You are a helpful assistant for high school students looking for community service. Only provide real, active websites and organizations.",
+        systemInstruction: "You are a helpful assistant for high school students looking for community service. Only provide real, active websites and organizations. Ensure every item has a realistic latitude and longitude based on its location.",
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -49,9 +63,12 @@ export async function fetchNearbyOpportunities(location: string, coords?: { lat:
               tags: {
                 type: Type.ARRAY,
                 items: { type: Type.STRING }
-              }
+              },
+              date: { type: Type.STRING },
+              latitude: { type: Type.NUMBER },
+              longitude: { type: Type.NUMBER }
             },
-            required: ["title", "organization", "organizationMission", "description", "url", "location", "hours", "tags"]
+            required: ["title", "organization", "organizationMission", "description", "url", "location", "hours", "tags", "date", "latitude", "longitude"]
           }
         },
         tools: [{ googleSearch: {} }]
@@ -61,7 +78,8 @@ export async function fetchNearbyOpportunities(location: string, coords?: { lat:
     const data = JSON.parse(response.text || "[]");
     return data.map((item: any, index: number) => ({
       ...item,
-      id: `real-opp-${index}`
+      id: `real-opp-${index}`,
+      coords: { lat: item.latitude, lng: item.longitude }
     }));
   } catch (error) {
     console.error("Error fetching opportunities:", error);
@@ -73,6 +91,7 @@ export async function searchSchools(query: string, state: string): Promise<strin
   if (!query || query.length < 3) return [];
   
   try {
+    const ai = getAI();
     const prompt = `Provide a JSON array of 5-10 real high school names in the state of ${state} that contain the text "${query}". Only return the array of strings.`;
     
     const response = await ai.models.generateContent({

@@ -75,8 +75,15 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isSignedIn();
       allow create: if isOwner(userId) && isValidProfile(incoming());
-      allow update: if (isOwner(userId) && isValidProfile(incoming())) || 
-                       (isSignedIn() && incoming().diff(existing()).affectedKeys().hasOnly(['followers']));
+      allow update: if (isOwner(userId) && isValidProfile(incoming()) && 
+                        incoming().get('followers', []) == existing().get('followers', [])) || 
+                       (isSignedIn() && 
+                        incoming().diff(existing()).affectedKeys().hasOnly(['followers']) &&
+                        (
+                          (incoming().followers.size() == existing().get('followers', []).size() + 1 && incoming().followers.hasAll(existing().get('followers', [])) && request.auth.uid in incoming().followers) ||
+                          (incoming().followers.size() == existing().get('followers', []).size() - 1 && existing().get('followers', []).hasAll(incoming().followers) && !(request.auth.uid in incoming().followers))
+                        )
+                       );
 
       // Volunteer Activities Subcollection
       match /activities/{activityId} {
@@ -100,8 +107,15 @@ service cloud.firestore {
     match /community_posts/{postId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && isValidCommunityPost(incoming()) && incoming().authorId == request.auth.uid;
-      allow update: if (isSignedIn() && isOwner(existing().authorId) && isValidCommunityPost(incoming())) ||
-                       (isSignedIn() && incoming().diff(existing()).affectedKeys().hasOnly(['likes']));
+      allow update: if (isSignedIn() && isOwner(existing().authorId) && isValidCommunityPost(incoming()) && 
+                        incoming().get('likes', []) == existing().get('likes', []) && 
+                        incoming().get('commentCount', 0) == existing().get('commentCount', 0)) ||
+                       (isSignedIn() && incoming().diff(existing()).affectedKeys().hasOnly(['likes']) &&
+                        (
+                          (incoming().likes.size() == existing().get('likes', []).size() + 1 && incoming().likes.hasAll(existing().get('likes', [])) && request.auth.uid in incoming().likes) ||
+                          (incoming().likes.size() == existing().get('likes', []).size() - 1 && existing().get('likes', []).hasAll(incoming().likes) && !(request.auth.uid in incoming().likes))
+                        )
+                       );
       allow delete: if isSignedIn() && isOwner(existing().authorId);
     }
   }

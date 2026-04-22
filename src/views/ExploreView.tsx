@@ -17,10 +17,12 @@ export function ExploreView({ onNavigate, profile }: ExploreViewProps) {
   const [opportunities, setOpportunities] = useState<VolunteerOpportunity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedFilters, setSelectedFilters] = useState({
     category: 'All',
-    time: 'Any time',
-    proximity: 'Anywhere'
+    maxDistance: 50, // default 50 miles
+    startDate: '',
+    endDate: ''
   });
 
   const handleShare = async (e: MouseEvent, opp: VolunteerOpportunity) => {
@@ -36,7 +38,6 @@ export function ExploreView({ onNavigate, profile }: ExploreViewProps) {
         await navigator.share(shareData);
       } else {
         await navigator.clipboard.writeText(opp.url);
-        // Simple visual feedback could be added here
       }
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
@@ -47,9 +48,19 @@ export function ExploreView({ onNavigate, profile }: ExploreViewProps) {
 
   const filterOptions = {
     category: ['All', 'Clubs', 'Outdoors', 'Tutoring', 'Fundraising', 'Animals'],
-    time: ['Any time', 'After School', 'Weekends', 'One-time'],
-    proximity: ['Anywhere', 'At School', 'Walkable', 'Online']
   };
+
+  function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+    const R = 3958.8; // Radius of the Earth in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
 
   useEffect(() => {
     async function loadData() {
@@ -58,7 +69,10 @@ export function ExploreView({ onNavigate, profile }: ExploreViewProps) {
       
       if (profile?.locationAllowed) {
         const browserCoords = await getCurrentLocation();
-        if (browserCoords) coords = browserCoords;
+        if (browserCoords) {
+          coords = browserCoords;
+          setUserCoords(browserCoords);
+        }
       }
 
       const searchLocation = profile?.schoolName || 'nearby';
@@ -73,11 +87,27 @@ export function ExploreView({ onNavigate, profile }: ExploreViewProps) {
     const matchesSearch = opp.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          opp.organization.toLowerCase().includes(searchQuery.toLowerCase());
     
-    // Simple filter logic for demo - in real world would use Gemini or more complex mapping
     const matchesCategory = selectedFilters.category === 'All' || 
                            opp.tags.some(t => t.toLowerCase() === selectedFilters.category.toLowerCase());
     
-    return matchesSearch && matchesCategory;
+    let matchesDistance = true;
+    if (userCoords && opp.coords) {
+      const dist = calculateDistance(userCoords.lat, userCoords.lng, opp.coords.lat, opp.coords.lng);
+      matchesDistance = dist <= selectedFilters.maxDistance;
+    }
+
+    let matchesDate = true;
+    if (opp.date) {
+      const oppDate = new Date(opp.date);
+      if (selectedFilters.startDate) {
+        matchesDate = matchesDate && oppDate >= new Date(selectedFilters.startDate);
+      }
+      if (selectedFilters.endDate) {
+        matchesDate = matchesDate && oppDate <= new Date(selectedFilters.endDate);
+      }
+    }
+    
+    return matchesSearch && matchesCategory && matchesDistance && matchesDate;
   });
 
   return (
@@ -137,32 +167,66 @@ export function ExploreView({ onNavigate, profile }: ExploreViewProps) {
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         className="absolute right-0 top-full mt-4 w-screen max-w-[600px] bg-white border-2 border-black rounded-[2rem] shadow-2xl z-50 p-8"
                      >
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                           {Object.entries(filterOptions).map(([key, options]) => (
-                             <div key={key} className="space-y-4">
-                               <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100 pb-2">
-                                 {key}
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <div className="space-y-4">
+                               <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100 pb-2 flex items-center gap-2">
+                                 <Plus size={10} /> Category
                                </h4>
-                               <div className="space-y-1">
-                                 {options.map(opt => (
+                               <div className="flex flex-wrap gap-2">
+                                 {filterOptions.category.map(opt => (
                                    <button
                                       key={opt}
-                                      onClick={() => setSelectedFilters(prev => ({ ...prev, [key]: opt }))}
+                                      onClick={() => setSelectedFilters(prev => ({ ...prev, category: opt }))}
                                       className={cn(
-                                        "w-full text-left px-4 py-3 rounded-xl text-sm font-black transition-all flex justify-between items-center",
-                                        selectedFilters[key as keyof typeof selectedFilters] === opt 
-                                          ? "bg-orange-600 text-white shadow-lg shadow-orange-200" 
-                                          : "text-gray-400 hover:bg-gray-50 hover:text-black"
+                                        "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                        selectedFilters.category === opt 
+                                          ? "bg-black text-white" 
+                                          : "bg-gray-50 text-gray-400 hover:text-black"
                                       )}
                                    >
                                       {opt}
-                                      {selectedFilters[key as keyof typeof selectedFilters] === opt && <Check size={14} />}
                                    </button>
                                  ))}
                                </div>
-                             </div>
-                           ))}
-                        </div>
+                            </div>
+
+                            <div className="space-y-4">
+                               <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100 pb-2 flex items-center gap-2">
+                                 <Navigation size={10} /> Max Distance ({selectedFilters.maxDistance} miles)
+                               </h4>
+                               <div className="pt-2">
+                                 <input 
+                                    type="range" 
+                                    min="5" 
+                                    max="100" 
+                                    step="5"
+                                    value={selectedFilters.maxDistance}
+                                    onChange={(e) => setSelectedFilters(prev => ({ ...prev, maxDistance: parseInt(e.target.value) }))}
+                                    className="w-full accent-black h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                                 />
+                               </div>
+                            </div>
+
+                            <div className="space-y-4">
+                               <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100 pb-2 flex items-center gap-2">
+                                 <Calendar size={10} /> Date Range
+                               </h4>
+                               <div className="grid grid-cols-2 gap-2">
+                                  <input 
+                                    type="date"
+                                    value={selectedFilters.startDate}
+                                    onChange={(e) => setSelectedFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                                    className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-bold uppercase focus:border-black focus:ring-0"
+                                  />
+                                  <input 
+                                    type="date"
+                                    value={selectedFilters.endDate}
+                                    onChange={(e) => setSelectedFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                                    className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[10px] font-bold uppercase focus:border-black focus:ring-0"
+                                  />
+                               </div>
+                            </div>
+                         </div>
                         <div className="mt-8 pt-6 border-t border-gray-100 flex justify-end gap-4">
                            <button onClick={() => setIsFilterOpen(false)} className="px-8 py-3 bg-black text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-orange-600 transition-colors">
                               Done

@@ -120,7 +120,9 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
     {
       id: 3,
       title: "Where do you go to school?",
-      description: state ? `Searching for high schools in ${state}.` : "This helps us show you volunteer spots nearby.",
+      description: state 
+        ? `Searching for high schools in ${state}. We use this to connect you with events at your school and local community.` 
+        : "This helps us show you real volunteer opportunities and regional community posts.",
       content: (
         <div className="space-y-6 w-full max-w-md relative">
           <div className="relative z-20 border-2 border-black rounded-2xl overflow-hidden bg-white shadow-[8px_8px_0px_rgba(0,0,0,1)]">

@@ -51,7 +51,15 @@ export function CommunityView({ profile, onProfileUpdate, onNavigate }: Communit
   async function loadPosts() {
     setIsLoading(true);
     try {
-      const data = await getRegionalPosts(region);
+      let data = await getRegionalPosts(region);
+      
+      // Fallback to Global if region is empty
+      if (data.length === 0 && region !== 'Global') {
+        const globalData = await getRegionalPosts('Global');
+        data = globalData;
+        console.info(`No posts in ${region}, falling back to Global.`);
+      }
+      
       setPosts(data);
     } catch (error) {
       console.error("Error loading posts:", error);

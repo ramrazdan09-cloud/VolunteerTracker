@@ -133,24 +133,24 @@ export function ProfileView({ profile, onNavigate, onSignOut, onProfileUpdate }:
                  </div>
                )}
 
-               <div className="grid grid-cols-3 gap-y-6 gap-x-2 py-8 border-y-2 border-orange-200/50 mb-8">
-                  <div className="text-center">
+               <div className="grid grid-cols-6 gap-y-6 py-8 border-y-2 border-orange-200/50 mb-8">
+                  <div className="text-center col-span-2">
                     <p className="text-2xl font-black text-black">{totalHours}</p>
                     <p className="text-[10px] font-black uppercase tracking-widest text-orange-600/60">Hours</p>
                   </div>
-                  <div className="text-center">
+                  <div className="text-center col-span-2">
                     <p className="text-2xl font-black text-black">{activities.length}</p>
                     <p className="text-[10px] font-black uppercase tracking-widest text-orange-600/60">Acts</p>
                   </div>
-                  <div className="text-center">
+                  <div className="text-center col-span-2">
                     <p className="text-2xl font-black text-black">{bookmarks.length}</p>
                     <p className="text-[10px] font-black uppercase tracking-widest text-orange-600/60">Saved</p>
                   </div>
-                  <div className="text-center pt-4 border-t border-orange-200/30 col-span-1.5">
+                  <div className="text-center pt-4 border-t border-orange-200/30 col-span-3">
                     <p className="text-xl font-black text-black">{profile.followers?.length || 0}</p>
                     <p className="text-[10px] font-black uppercase tracking-widest text-orange-600/60">Followers</p>
                   </div>
-                  <div className="text-center pt-4 border-t border-orange-200/30 col-span-1.5">
+                  <div className="text-center pt-4 border-t border-orange-200/30 col-span-3">
                     <p className="text-xl font-black text-black">{profile.following?.length || 0}</p>
                     <p className="text-[10px] font-black uppercase tracking-widest text-orange-600/60">Following</p>
                   </div>

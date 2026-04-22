@@ -146,14 +146,28 @@ export function ImpactDashboardView({ onNavigate, profile }: ImpactDashboardView
                   </div>
                 ))
               ) : (
-                <div className="p-12 text-center bg-gray-50 rounded-3xl border border-gray-100">
-                  <p className="text-sm font-black text-gray-300 uppercase">You haven't logged any hours yet.</p>
-                  <button 
-                    onClick={() => onNavigate('log')}
-                    className="mt-4 text-orange-600 font-black text-xs uppercase hover:underline"
-                  >
-                    Start logging now
-                  </button>
+                <div className="p-16 text-center bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-200">
+                  <div className="w-20 h-20 bg-orange-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <PlusCircle className="text-orange-600" size={32} />
+                  </div>
+                  <h3 className="text-2xl font-black mb-2 uppercase italic">The Board is Blank</h3>
+                  <p className="text-gray-500 font-medium max-w-sm mx-auto mb-10 text-sm">
+                    Your impact journey starts today. Log your first few hours or check out what's happening near your school.
+                  </p>
+                  <div className="flex flex-col sm:flex-row justify-center gap-4">
+                    <button 
+                      onClick={() => onNavigate('log')}
+                      className="px-8 py-4 bg-black text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-orange-600 transition-all flex items-center justify-center gap-4"
+                    >
+                      <PlusCircle size={18} /> LOG HOURS
+                    </button>
+                    <button 
+                      onClick={() => onNavigate('explore')}
+                      className="px-8 py-4 bg-white border-2 border-black text-black rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-gray-50 transition-all flex items-center justify-center gap-4"
+                    >
+                      <Globe size={18} /> FIND EVENTS
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
