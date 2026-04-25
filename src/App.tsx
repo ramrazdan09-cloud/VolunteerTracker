@@ -5,6 +5,7 @@ import { auth, getUserProfile, saveUserProfile, UserProfile } from './lib/fireba
 import { cn } from './lib/utils';
 import { LayoutDashboard, Compass, Users, UserCircle } from 'lucide-react';
 import { fetchNearbyOpportunities, VolunteerOpportunity } from './services/opportunityService';
+import { Analytics } from '@vercel/analytics/react';
 import { 
   ExploreView,
   OnboardingView,
@@ -227,6 +228,7 @@ export default function App() {
            </div>
         </footer>
       </div>
+      <Analytics />
     </div>
   );
 }
