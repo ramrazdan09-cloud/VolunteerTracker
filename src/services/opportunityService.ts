@@ -27,26 +27,32 @@ export interface VolunteerOpportunity {
   coords?: { lat: number; lng: number };
 }
 
-export async function fetchNearbyOpportunities(location: string, coords?: { lat: number; lng: number }, state?: string | null): Promise<VolunteerOpportunity[]> {
+export async function fetchNearbyOpportunities(location: string, coords?: { lat: number; lng: number }, state?: string | null, radius: number = 50): Promise<VolunteerOpportunity[]> {
   try {
     const ai = getAI();
     let locationContext = coords 
-      ? `near coordinates (${coords.lat}, ${coords.lng})` 
-      : `in or near ${location}`;
+      ? `within ${radius} miles of latitude ${coords.lat.toFixed(4)}, longitude ${coords.lng.toFixed(4)}` 
+      : `within ${radius} miles of ${location}`;
     
-    if (state && !coords) {
-      locationContext += ` in the state of ${state}`;
+    if (state && !location.includes(state)) {
+      locationContext += ` in ${state}`;
     }
 
-    const prompt = `Find 7-10 real, current community service websites or organizations for high school students ${locationContext}.
+    const prompt = `Search for 12-15 real, active volunteer opportunities or organizations for high school students ${locationContext}. 
+    Focus on local food banks, animal shelters, tutoring centers, and community gardens.
+    Ensure you find REAL organizations with valid URLs.
+    
+    Include some opportunities that are specifically close to the center and some up to the ${radius} mile limit.
     Provide the response as a JSON array of objects with the following keys:
-    title (event/org name), organization, organizationMission (brief 1-2 sentence mission or description of work), description (short, engaging event description), url (direct link), location, hours (est per event), tags (array of 2-3 categories), date (approximate next date in YYYY-MM-DD format if applicable, otherwise today's date), latitude, longitude.`;
+    title (event/org name), organization, organizationMission (brief 1-2 sentence mission or description of work), description (short, engaging event description), url (direct link), location (city/address), hours (est per event/week), tags (array of 2-3 categories), date (next available date in YYYY-MM-DD, or "Ongoing"), latitude, longitude.
+    
+    If you cannot find specific upcoming events, provide information for major local non-profits that regularly accept student volunteers in that area.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
-        systemInstruction: "You are a helpful assistant for high school students looking for community service. Only provide real, active websites and organizations. Ensure every item has a realistic latitude and longitude based on its location.",
+        systemInstruction: "You are a specialized community service locator. Your goal is to connect students with real-world impact. Verify that URLs are real. If search results are sparse, look for regional chapters of major non-profits (Red Cross, Habitat for Humanity, etc.) in the specific area mentioned.",
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -76,15 +82,64 @@ export async function fetchNearbyOpportunities(location: string, coords?: { lat:
     });
 
     const data = JSON.parse(response.text || "[]");
+    
+    if (data.length === 0) {
+      console.warn("Gemini search returned empty results. Returning featured fallbacks.");
+      return getFeaturedFallbacks(state || "the United States");
+    }
+
     return data.map((item: any, index: number) => ({
       ...item,
-      id: `real-opp-${index}`,
+      id: `real-opp-${index}-${Date.now()}`,
       coords: { lat: item.latitude, lng: item.longitude }
     }));
   } catch (error) {
     console.error("Error fetching opportunities:", error);
-    return [];
+    return getFeaturedFallbacks(state || "the United States");
   }
+}
+
+function getFeaturedFallbacks(region: string): VolunteerOpportunity[] {
+  const fallbacks = [
+    {
+      id: 'fb-1',
+      title: 'American Red Cross Youth Volunteer',
+      organization: 'American Red Cross',
+      organizationMission: 'Prevents and alleviates human suffering in the face of emergencies.',
+      description: 'Join a local youth chapter to help with blood drives, disaster preparedness, and community health.',
+      url: 'https://www.redcross.org/volunteer/become-a-volunteer/urgent-need-for-volunteers.html',
+      location: `Chapters in ${region}`,
+      hours: '5-10 hrs/week',
+      tags: ['Health', 'Emergency', 'Community'],
+      date: 'Ongoing'
+    },
+    {
+      id: 'fb-2',
+      title: 'Habitat for Humanity Youth Program',
+      organization: 'Habitat for Humanity',
+      organizationMission: 'Building strength, stability and self-reliance through shelter.',
+      description: 'Help build or renovate houses. Many locations have "Youth United" programs for students.',
+      url: 'https://www.habitat.org/volunteer/near-you/youth-programs',
+      location: `Locations in ${region}`,
+      hours: 'Full Day (6-8 hrs)',
+      tags: ['Construction', 'Housing', 'Teamwork'],
+      date: 'Check local site'
+    },
+    {
+      id: 'fb-3',
+      title: 'Animal Shelter Support',
+      organization: 'Best Friends Animal Society',
+      organizationMission: 'Working to save the lives of cats and dogs in America\'s shelters.',
+      description: 'Support local animal welfare. Helping with adoption events, cage cleaning, or administrative work.',
+      url: 'https://bestfriends.org/volunteer',
+      location: `Partner shelters in ${region}`,
+      hours: '3-5 hrs/week',
+      tags: ['Animals', 'Outdoors', 'Care'],
+      date: 'Ongoing'
+    }
+  ];
+  
+  return fallbacks;
 }
 
 export async function searchSchools(query: string, state: string): Promise<string[]> {

@@ -47,7 +47,7 @@ export function ExploreView({ onNavigate, profile }: ExploreViewProps) {
   };
 
   const filterOptions = {
-    category: ['All', 'Clubs', 'Outdoors', 'Tutoring', 'Fundraising', 'Animals'],
+    category: ['All', 'Clubs', 'Outdoors', 'Tutoring', 'Fundraising', 'Animals', 'Environment', 'Health'],
   };
 
   function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -62,24 +62,26 @@ export function ExploreView({ onNavigate, profile }: ExploreViewProps) {
     return R * c;
   }
 
-  useEffect(() => {
-    async function loadData() {
-      setIsLoading(true);
-      let coords: { lat: number; lng: number } | undefined = undefined;
-      
-      if (profile?.locationAllowed) {
-        const browserCoords = await getCurrentLocation();
-        if (browserCoords) {
-          coords = browserCoords;
-          setUserCoords(browserCoords);
-        }
+  async function loadData(overrideRadius?: number) {
+    setIsLoading(true);
+    let coords: { lat: number; lng: number } | undefined = undefined;
+    
+    if (profile?.locationAllowed) {
+      const browserCoords = await getCurrentLocation();
+      if (browserCoords) {
+        coords = browserCoords;
+        setUserCoords(browserCoords);
       }
-
-      const searchLocation = profile?.schoolName || 'nearby';
-      const data = await fetchNearbyOpportunities(searchLocation, coords, profile?.state);
-      setOpportunities(data);
-      setIsLoading(false);
     }
+
+    const radius = overrideRadius ?? selectedFilters.maxDistance;
+    const searchLocation = profile?.schoolName || (profile?.state ? `in ${profile.state}` : 'nearby');
+    const data = await fetchNearbyOpportunities(searchLocation, coords, profile?.state, radius);
+    setOpportunities(data);
+    setIsLoading(false);
+  }
+
+  useEffect(() => {
     loadData();
   }, [profile?.schoolName, profile?.locationAllowed]);
 
@@ -228,8 +230,14 @@ export function ExploreView({ onNavigate, profile }: ExploreViewProps) {
                             </div>
                          </div>
                         <div className="mt-8 pt-6 border-t border-gray-100 flex justify-end gap-4">
-                           <button onClick={() => setIsFilterOpen(false)} className="px-8 py-3 bg-black text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-orange-600 transition-colors">
-                              Done
+                           <button 
+                             onClick={() => {
+                               setIsFilterOpen(false);
+                               loadData();
+                             }} 
+                             className="px-8 py-3 bg-black text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-orange-600 transition-colors"
+                           >
+                              Apply & Search
                            </button>
                         </div>
                      </motion.div>
@@ -241,9 +249,17 @@ export function ExploreView({ onNavigate, profile }: ExploreViewProps) {
 
         {/* LOADING STATE */}
         {isLoading && (
-          <div className="py-32 flex flex-col items-center justify-center space-y-6">
-            <Loader2 className="w-12 h-12 text-orange-600 animate-spin" />
-            <p className="text-xl font-black uppercase tracking-widest text-gray-300">Searching the web for you...</p>
+          <div className="py-32 flex flex-col items-center justify-center space-y-8">
+            <div className="relative">
+              <div className="absolute inset-0 bg-orange-600/20 blur-3xl animate-pulse rounded-full" />
+              <Loader2 className="w-16 h-16 text-orange-600 animate-spin relative z-10" />
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-black uppercase tracking-tighter text-black mb-2">Scanning Planet Earth...</p>
+              <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
+                Finding the best moves near {profile?.schoolName || 'your area'}
+              </p>
+            </div>
           </div>
         )}
 
@@ -267,17 +283,31 @@ export function ExploreView({ onNavigate, profile }: ExploreViewProps) {
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" 
                     />
-                    <div className="absolute top-6 left-6 bg-white/90 backdrop-blur px-4 py-2 rounded-full font-black text-[10px] uppercase tracking-widest text-orange-600 border border-orange-100 shadow-sm">
-                       {event.tags[0] || 'Community'}
+                    <div className="absolute top-6 left-6 flex flex-col gap-2">
+                      <div className="bg-white/90 backdrop-blur px-4 py-2 rounded-full font-black text-[10px] uppercase tracking-widest text-orange-600 border border-orange-100 shadow-sm">
+                         {event.tags[0] || 'Community'}
+                      </div>
+                      {userCoords && event.coords && (
+                        <div className="bg-black/90 backdrop-blur px-4 py-2 rounded-full font-black text-[10px] uppercase tracking-widest text-white border border-white/10 shadow-sm flex items-center gap-2">
+                           <Navigation size={10} />
+                           {calculateDistance(userCoords.lat, userCoords.lng, event.coords.lat, event.coords.lng).toFixed(1)} miles
+                        </div>
+                      )}
                     </div>
                     <div className="absolute bottom-6 right-6 bg-black text-white px-4 py-2 rounded-xl font-black text-xs">
                        {event.hours}
                     </div>
                   </div>
                   <div className="p-8 flex-1 flex flex-col">
-                    <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
+                    <a 
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location + " " + event.organization)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 hover:text-black transition-colors"
+                    >
                       <MapPin size={12} /> {event.location}
-                    </div>
+                    </a>
                     <h3 className="text-2xl font-black text-black mb-3 group-hover:text-orange-600 transition-colors leading-tight">
                       {event.title}
                     </h3>
@@ -317,9 +347,32 @@ export function ExploreView({ onNavigate, profile }: ExploreViewProps) {
                 </motion.div>
               ))
             ) : (
-              <div className="col-span-full py-32 text-center">
-                <p className="text-4xl font-black text-gray-100 uppercase tracking-tighter mb-4">No results found</p>
-                <p className="text-gray-400 font-medium">Try a different search or school location.</p>
+              <div className="col-span-full py-32 text-center bg-gray-50 rounded-[4rem] border-2 border-dashed border-gray-100 px-6">
+                <div className="w-24 h-24 bg-white rounded-[2rem] shadow-xl flex items-center justify-center mx-auto mb-8">
+                  <Search size={40} className="text-gray-200" />
+                </div>
+                <h2 className="text-4xl font-black text-black uppercase tracking-tighter mb-4">No results in this view</h2>
+                <p className="text-gray-400 font-medium max-w-sm mx-auto mb-10 leading-relaxed">
+                  Try adjusting your filters or broadening your search range. We're searching live, so try again in a few seconds!
+                </p>
+                <div className="flex flex-col sm:flex-row justify-center gap-4">
+                  <button 
+                    onClick={() => loadData()}
+                    className="px-10 py-5 bg-black text-white rounded-3xl font-black uppercase tracking-widest text-xs hover:bg-orange-600 transition-all flex items-center justify-center gap-3"
+                  >
+                    <Plus className={cn("transition-transform", isLoading && "animate-spin")} size={18} /> 
+                    Try Refresh
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setSelectedFilters(prev => ({ ...prev, maxDistance: 100, category: 'All' }));
+                      loadData(100);
+                    }}
+                    className="px-10 py-5 bg-white border-2 border-black text-black rounded-3xl font-black uppercase tracking-widest text-xs hover:bg-gray-50 transition-all"
+                  >
+                    Broaden Search
+                  </button>
+                </div>
               </div>
             )}
           </div>

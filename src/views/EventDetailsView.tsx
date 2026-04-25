@@ -129,18 +129,30 @@ export function EventDetailsView({ onNavigate, opportunity }: EventDetailsViewPr
                 {opportunity.description}
               </p>
               
-              <div className="space-y-6 pt-6 border-t border-gray-100">
-                <h4 className="text-lg font-black uppercase tracking-widest text-black">The Organization</h4>
-                <div className="bg-orange-50 p-8 rounded-3xl border-2 border-orange-100 flex items-start gap-4">
-                  <div className="flex-1 space-y-4">
-                     <p className="font-black text-xl text-orange-900 leading-tight">
-                        {opportunity.organization}
-                     </p>
-                     <p className="italic text-orange-900/60 font-medium text-lg leading-relaxed">
-                        <span className="text-4xl text-orange-200 leading-none">"</span>
-                        {opportunity.organizationMission || `This organization is doing incredible work in the community and is looking for volunteers like you!`}
-                        <span className="text-4xl text-orange-200 leading-none self-end">"</span>
-                     </p>
+              <div className="space-y-8 pt-12 border-t border-gray-100">
+                <div className="flex items-end justify-between gap-4">
+                  <h4 className="text-sm font-black uppercase tracking-[0.2em] text-gray-300">The Powerhouse Behind it</h4>
+                  <Globe className="text-gray-200" size={24} />
+                </div>
+                
+                <div className="relative">
+                  <div className="absolute -left-4 -top-4 w-24 h-24 bg-orange-100 rounded-full blur-3xl opacity-50" />
+                  <div className="relative bg-white border-4 border-black p-10 rounded-[3rem] shadow-[16px_16px_0px_rgba(0,0,0,1)]">
+                    <div className="space-y-6">
+                       <div>
+                         <p className="text-sm font-black text-orange-600 uppercase tracking-widest mb-1">Organization</p>
+                         <h3 className="text-4xl font-black text-black leading-none uppercase tracking-tighter">
+                            {opportunity.organization}
+                         </h3>
+                       </div>
+                       
+                       <div className="relative">
+                          <span className="absolute -left-6 -top-6 text-8xl text-orange-100 font-serif leading-none italic pointer-events-none">"</span>
+                          <p className="relative z-10 text-xl text-gray-600 font-medium leading-relaxed italic pr-4">
+                            {opportunity.organizationMission || `This organization is dedicated to creating positive change and empowering individuals to make a difference in their community through service and education.`}
+                          </p>
+                       </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -156,7 +168,7 @@ export function EventDetailsView({ onNavigate, opportunity }: EventDetailsViewPr
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Date/Schedule</p>
-                    <p className="text-sm font-black uppercase">Check organization site</p>
+                    <p className="text-sm font-black uppercase">{opportunity.date || 'Check organization site'}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-6">
@@ -169,6 +181,32 @@ export function EventDetailsView({ onNavigate, opportunity }: EventDetailsViewPr
                   </div>
                 </div>
               </div>
+
+              {opportunity.coords && (
+                <div className="rounded-3xl overflow-hidden border-2 border-gray-100 h-48 bg-gray-100 relative group">
+                  <iframe
+                    title="opportunity-location"
+                    width="100%"
+                    height="100%"
+                    frameBorder="0"
+                    style={{ border: 0 }}
+                    src={`https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '')}&q=${opportunity.coords.lat},${opportunity.coords.lng}`}
+                    allowFullScreen
+                    className="grayscale group-hover:grayscale-0 transition-all duration-700"
+                  />
+                  {!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY && (
+                    <div className="absolute inset-0 bg-gray-50 flex items-center justify-center p-6 text-center">
+                      <div className="space-y-2">
+                        <MapPin className="mx-auto text-gray-300" size={32} />
+                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-tight">
+                          Map View available with API Key<br/>
+                          Location: {opportunity.location}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="pt-8 border-t border-gray-200">
                 <div className="space-y-4">
