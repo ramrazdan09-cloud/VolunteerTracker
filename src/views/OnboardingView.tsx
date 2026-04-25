@@ -22,19 +22,29 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
+    if (schoolName.length < 2) {
+      setSchoolSuggestions([]);
+      setIsSearchingSchools(false);
+      return;
+    }
+
+    if (schoolSuggestions.includes(schoolName)) {
+      return;
+    }
+
+    setIsSearchingSchools(true);
     const timer = setTimeout(async () => {
-      if (schoolName.length >= 3 && state && !schoolSuggestions.includes(schoolName)) {
-        setIsSearchingSchools(true);
+      if (state) {
         const results = await searchSchools(schoolName, state);
         setSchoolSuggestions(results);
         setIsSearchingSchools(false);
         setShowSuggestions(true);
-      } else {
-        setSchoolSuggestions([]);
       }
-    }, 600);
+    }, 400); 
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [schoolName, state]);
 
   const selectSchool = (name: string) => {
@@ -145,7 +155,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           </div>
 
           <AnimatePresence>
-            {showSuggestions && (schoolName.length >= 3) && (
+            {showSuggestions && (schoolName.length >= 2) && (
               <motion.div 
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -177,19 +187,33 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                         <Check size={16} className="text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </button>
                     ))}
+                    <button 
+                       onClick={() => selectSchool(schoolName)}
+                       className="w-full text-left px-6 py-4 bg-gray-50 hover:bg-orange-600 hover:text-white font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 border-t border-black/10 transition-colors"
+                    >
+                       Use "{schoolName}" exactly
+                    </button>
                    </>
                 ) : (
                   <div className="p-10 text-center flex flex-col items-center gap-4">
                     <Search className="text-gray-200" size={32} />
                     <p className="text-gray-400 font-black uppercase tracking-widest text-[10px]">
-                      No schools found for "{schoolName}"
+                      No exact matches for "{schoolName}"
                     </p>
-                    <button 
-                      onClick={() => setShowSuggestions(false)}
-                      className="text-[8px] font-black underline text-orange-600 uppercase"
-                    >
-                      Keep typing or skip
-                    </button>
+                    <div className="space-y-4 w-full">
+                       <button 
+                         onClick={() => selectSchool(schoolName)}
+                         className="w-full py-4 bg-black text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-orange-600 transition-colors"
+                       >
+                         Use "{schoolName}" anyway
+                       </button>
+                       <button 
+                         onClick={() => setShowSuggestions(false)}
+                         className="text-[8px] font-black underline text-gray-400 uppercase hover:text-black"
+                       >
+                         Keep typing or skip
+                       </button>
+                    </div>
                   </div>
                 )}
               </motion.div>

@@ -148,18 +148,26 @@ export function CommunityView({ profile, onProfileUpdate, onNavigate }: Communit
 
   // School Selection Logic
   useEffect(() => {
-    const delayDebounceFn = setTimeout(async () => {
-      if (tempSchool && tempSchool.length >= 3 && tempState) {
-        setIsSearchingSchools(true);
+    if (tempSchool.length < 3) {
+      setSchoolSuggestions([]);
+      setIsSearchingSchools(false);
+      return;
+    }
+
+    if (schoolSuggestions.includes(tempSchool)) {
+      return;
+    }
+
+    setIsSearchingSchools(true);
+    const timer = setTimeout(async () => {
+      if (tempState) {
         const results = await searchSchools(tempSchool, tempState);
         setSchoolSuggestions(results);
         setIsSearchingSchools(false);
-      } else {
-        setSchoolSuggestions([]);
       }
-    }, 500);
+    }, 400);
 
-    return () => clearTimeout(delayDebounceFn);
+    return () => clearTimeout(timer);
   }, [tempSchool, tempState]);
 
   const handleUpdateSchool = async () => {
@@ -236,17 +244,49 @@ export function CommunityView({ profile, onProfileUpdate, onNavigate }: Communit
                         <Loader2 className="absolute right-4 top-[45px] animate-spin text-orange-600" size={18} />
                       )}
                       
-                      {schoolSuggestions.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 bg-white border-2 border-black rounded-2xl shadow-xl mt-2 overflow-hidden z-[110] max-h-48 overflow-y-auto">
-                          {schoolSuggestions.map(s => (
-                            <button 
-                              key={s}
-                              onClick={() => setTempSchool(s)}
-                              className="w-full px-6 py-3 text-left font-black text-xs uppercase hover:bg-orange-50 transition-colors border-b border-gray-50 last:border-none"
-                            >
-                              {s}
-                            </button>
-                          ))}
+                      {(tempSchool.length >= 2 && (schoolSuggestions.length > 0 || isSearchingSchools)) && (
+                        <div className="absolute top-full left-0 right-0 bg-white border-2 border-black rounded-2xl shadow-xl mt-2 overflow-hidden z-[110] max-h-60 overflow-y-auto">
+                          {isSearchingSchools ? (
+                            <div className="p-6 text-center flex flex-col items-center gap-2">
+                              <Loader2 className="text-orange-600 animate-spin" size={20} />
+                              <p className="text-[8px] font-black uppercase text-gray-400">Searching Registry...</p>
+                            </div>
+                          ) : (
+                            <>
+                              {schoolSuggestions.length > 0 ? (
+                                <>
+                                  {schoolSuggestions.map(s => (
+                                    <button 
+                                      key={s}
+                                      onClick={() => {
+                                        setTempSchool(s);
+                                        setSchoolSuggestions([]);
+                                      }}
+                                      className="w-full px-6 py-3 text-left font-black text-xs uppercase hover:bg-orange-50 transition-colors border-b border-gray-50 last:border-none"
+                                    >
+                                      {s}
+                                    </button>
+                                  ))}
+                                  <button 
+                                    onClick={() => { setTempSchool(tempSchool); setSchoolSuggestions([]); }}
+                                    className="w-full py-2 bg-gray-50 text-[8px] font-black uppercase text-orange-600"
+                                  >
+                                    Use "{tempSchool}"
+                                  </button>
+                                </>
+                              ) : (
+                                <div className="p-6 text-center space-y-3">
+                                  <p className="text-[8px] font-black uppercase text-gray-300">No schools matched</p>
+                                  <button 
+                                    onClick={() => { setTempSchool(tempSchool); setSchoolSuggestions([]); }}
+                                    className="w-full py-3 bg-black text-white rounded-xl text-[8px] font-black uppercase"
+                                  >
+                                    Use "{tempSchool}" Anyway
+                                  </button>
+                                </div>
+                              )}
+                            </>
+                          )}
                         </div>
                       )}
                     </div>

@@ -146,13 +146,18 @@ export async function searchSchools(query: string, state: string): Promise<strin
   
   try {
     const ai = getAI();
-    const prompt = `Provide a JSON array of 5-10 real high school names in the state of ${state} that contain the text "${query}". Only return the array of strings.`;
+    // Prompting to specifically use Google Search to find the schools
+    const prompt = `Search the internet to find 5-10 real, existing high schools in the state of ${state} that contain or are very similar to "${query}". 
+    Format the result strictly as a JSON array of strings containing the full official names of the schools. 
+    Example: If searching for "Orange Glen" in CA, it should definitely return ["Orange Glen High School"].
+    If you cannot find any, try searching for high schools in the city of ${query} if "${query}" looks like a city name. 
+    Only return the JSON array, no preamble.`;
     
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
-        systemInstruction: "You are a school directory assistant. Only return real, existing high school names.",
+        systemInstruction: "You are a specialized school directory assistant. You MUST use Google Search to find and verify the existence of schools before returning them. Always provide the full name, e.g., 'X High School'. Only return schools in the requested state.",
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -162,7 +167,8 @@ export async function searchSchools(query: string, state: string): Promise<strin
       }
     });
 
-    return JSON.parse(response.text || "[]");
+    const data = JSON.parse(response.text || "[]");
+    return data;
   } catch (error) {
     console.error("Error searching schools:", error);
     return [];

@@ -47,18 +47,26 @@ export function ProfileView({ profile, onNavigate, onSignOut, onProfileUpdate }:
 
   // School Search Logic
   useEffect(() => {
-    const delayDebounceFn = setTimeout(async () => {
-      if (editSchool && editSchool.length >= 3 && editState) {
-        setIsSearchingSchools(true);
+    if (editSchool.length < 3) {
+      setSchoolSuggestions([]);
+      setIsSearchingSchools(false);
+      return;
+    }
+
+    if (schoolSuggestions.includes(editSchool)) {
+      return;
+    }
+
+    setIsSearchingSchools(true);
+    const timer = setTimeout(async () => {
+      if (editState) {
         const results = await searchSchools(editSchool, editState);
         setSchoolSuggestions(results);
         setIsSearchingSchools(false);
-      } else {
-        setSchoolSuggestions([]);
       }
-    }, 500);
+    }, 400);
 
-    return () => clearTimeout(delayDebounceFn);
+    return () => clearTimeout(timer);
   }, [editSchool, editState]);
 
   const handleSaveProfile = async () => {
@@ -412,7 +420,7 @@ export function ProfileView({ profile, onNavigate, onSignOut, onProfileUpdate }:
                     </div>
                     
                     <AnimatePresence>
-                      {editSchool.length >= 3 && (schoolSuggestions.length > 0 || isSearchingSchools) && (
+                      {editSchool.length >= 2 && (schoolSuggestions.length > 0 || isSearchingSchools) && (
                         <motion.div 
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
@@ -426,21 +434,38 @@ export function ProfileView({ profile, onNavigate, onSignOut, onProfileUpdate }:
                             </div>
                           ) : (
                             <>
-                              {schoolSuggestions.map(s => (
-                                <button 
-                                  key={s}
-                                  onClick={() => {
-                                    setEditSchool(s);
-                                    setSchoolSuggestions([]);
-                                  }}
-                                  className="w-full px-6 py-4 text-left font-black text-xs uppercase hover:bg-orange-50 transition-colors border-b border-gray-50 last:border-none flex items-center justify-between group"
-                                >
-                                  <span>{s}</span>
-                                  <Check size={14} className="text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                </button>
-                              ))}
-                              {schoolSuggestions.length === 0 && (
-                                <div className="p-6 text-center text-[8px] font-black uppercase text-gray-300">No results found</div>
+                              {schoolSuggestions.length > 0 ? (
+                                <>
+                                  {schoolSuggestions.map(s => (
+                                    <button 
+                                      key={s}
+                                      onClick={() => {
+                                        setEditSchool(s);
+                                        setSchoolSuggestions([]);
+                                      }}
+                                      className="w-full px-6 py-4 text-left font-black text-xs uppercase hover:bg-orange-50 transition-colors border-b border-gray-50 last:border-none flex items-center justify-between group"
+                                    >
+                                      <span>{s}</span>
+                                      <Check size={14} className="text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </button>
+                                  ))}
+                                  <button 
+                                    onClick={() => { setEditSchool(editSchool); setSchoolSuggestions([]); }}
+                                    className="w-full py-3 bg-gray-50 text-[8px] font-black uppercase hover:bg-black hover:text-white transition-colors"
+                                  >
+                                    Use "{editSchool}"
+                                  </button>
+                                </>
+                              ) : (
+                                <div className="p-6 text-center space-y-4">
+                                  <p className="text-[8px] font-black uppercase text-gray-300 tracking-widest">No schools found</p>
+                                  <button 
+                                    onClick={() => { setEditSchool(editSchool); setSchoolSuggestions([]); }}
+                                    className="w-full py-3 bg-black text-white rounded-xl text-[8px] font-black uppercase hover:bg-orange-600 transition-colors"
+                                  >
+                                    Use "{editSchool}"
+                                  </button>
+                                </div>
                               )}
                             </>
                           )}
