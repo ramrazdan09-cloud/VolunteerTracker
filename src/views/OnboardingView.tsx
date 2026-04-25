@@ -45,7 +45,8 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('.relative.z-20') && !target.closest('.absolute.z-10')) {
+      // Check if click was outside the search input container and suggestions list
+      if (!target.closest('.school-search-container')) {
         setShowSuggestions(false);
       }
     };
@@ -124,12 +125,12 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
         ? `Searching for high schools in ${state}. We use this to connect you with events at your school and local community.` 
         : "This helps us show you real volunteer opportunities and regional community posts.",
       content: (
-        <div className="space-y-6 w-full max-w-md relative">
-          <div className="relative z-20 border-2 border-black rounded-2xl overflow-hidden bg-white shadow-[8px_8px_0px_rgba(0,0,0,1)]">
+        <div className="space-y-6 w-full max-w-md relative school-search-container">
+          <div className="relative z-50 border-2 border-black rounded-2xl overflow-hidden bg-white shadow-[8px_8px_0px_rgba(0,0,0,1)]">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input
               className="w-full pl-12 pr-12 py-5 bg-transparent border-none focus:ring-0 font-bold text-lg placeholder:text-gray-300 uppercase"
-              placeholder="Start typing school..."
+              placeholder="Search your high school..."
               type="text"
               value={schoolName}
               onChange={(e) => {
@@ -144,28 +145,53 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           </div>
 
           <AnimatePresence>
-            {showSuggestions && (schoolSuggestions.length > 0 || isSearchingSchools) && (
+            {showSuggestions && (schoolName.length >= 3) && (
               <motion.div 
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="absolute top-[85px] left-0 right-0 z-10 bg-white border-2 border-black rounded-2xl shadow-[8px_8px_0px_rgba(0,0,0,1)] overflow-hidden max-h-[240px] overflow-y-auto"
+                className="absolute top-[85px] left-0 right-0 z-[60] bg-white border-2 border-black rounded-2xl shadow-[12px_12px_0px_rgba(0,0,0,1)] overflow-hidden max-h-[300px] overflow-y-auto"
               >
-                {isSearchingSchools && schoolSuggestions.length === 0 && (
-                  <div className="p-6 text-center text-gray-400 font-bold italic animate-pulse">
-                    Looking for schools in {state}...
+                {isSearchingSchools ? (
+                  <div className="p-10 text-center flex flex-col items-center gap-4">
+                    <Loader2 className="text-orange-600 animate-spin" size={32} />
+                    <p className="text-gray-400 font-black uppercase tracking-widest text-[10px]">
+                      Searching Registry in {state}...
+                    </p>
+                  </div>
+                ) : schoolSuggestions.length > 0 ? (
+                   <>
+                    <div className="px-6 py-2 bg-gray-50 border-b border-black/5 text-[8px] font-black uppercase tracking-widest text-gray-400">
+                      Found {schoolSuggestions.length} schools matching "{schoolName}"
+                    </div>
+                    {schoolSuggestions.map((school) => (
+                      <button
+                        key={school}
+                        onClick={() => selectSchool(school)}
+                        className="w-full text-left px-6 py-5 hover:bg-orange-50 font-black text-sm uppercase transition-all flex items-center justify-between group border-b border-gray-100 last:border-none hover:pl-8"
+                      >
+                        <div className="flex items-center gap-3">
+                          <GraduationCap size={16} className={cn("text-gray-300 group-hover:text-orange-600 transition-colors")} />
+                          <span className="group-hover:text-orange-600 transition-colors">{school}</span>
+                        </div>
+                        <Check size={16} className="text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </button>
+                    ))}
+                   </>
+                ) : (
+                  <div className="p-10 text-center flex flex-col items-center gap-4">
+                    <Search className="text-gray-200" size={32} />
+                    <p className="text-gray-400 font-black uppercase tracking-widest text-[10px]">
+                      No schools found for "{schoolName}"
+                    </p>
+                    <button 
+                      onClick={() => setShowSuggestions(false)}
+                      className="text-[8px] font-black underline text-orange-600 uppercase"
+                    >
+                      Keep typing or skip
+                    </button>
                   </div>
                 )}
-                {schoolSuggestions.map((school) => (
-                  <button
-                    key={school}
-                    onClick={() => selectSchool(school)}
-                    className="w-full text-left px-6 py-4 hover:bg-orange-50 font-black text-sm uppercase transition-colors flex items-center justify-between group border-b border-gray-100 last:border-none"
-                  >
-                    <span>{school}</span>
-                    <Check size={16} className="text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </button>
-                ))}
               </motion.div>
             )}
           </AnimatePresence>

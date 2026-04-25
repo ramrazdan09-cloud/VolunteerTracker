@@ -393,35 +393,60 @@ export function ProfileView({ profile, onNavigate, onSignOut, onProfileUpdate }:
                     </select>
                   </div>
 
-                  <div className="space-y-4 relative">
+                  <div className="space-y-4 relative school-search-container">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block ml-4">High School Name</label>
-                    <input 
-                      type="text"
-                      placeholder="Start typing school..."
-                      className="w-full px-8 py-5 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold focus:border-black focus:ring-0 transition-all uppercase"
-                      value={editSchool}
-                      onChange={(e) => setEditSchool(e.target.value)}
-                    />
-                    {isSearchingSchools && (
-                      <Loader2 className="absolute right-6 top-[55px] animate-spin text-orange-600" size={18} />
-                    )}
+                    <div className="relative">
+                      <input 
+                        type="text"
+                        placeholder="Search schools..."
+                        className="w-full px-8 py-5 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold focus:border-black focus:ring-0 transition-all uppercase"
+                        value={editSchool}
+                        onChange={(e) => {
+                          setEditSchool(e.target.value);
+                          setIsSearchingSchools(true);
+                        }}
+                      />
+                      {isSearchingSchools && (
+                        <Loader2 className="absolute right-6 top-1/2 -translate-y-1/2 animate-spin text-orange-600" size={18} />
+                      )}
+                    </div>
                     
-                    {schoolSuggestions.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 bg-white border-2 border-black rounded-2xl shadow-xl mt-2 overflow-hidden z-[110] max-h-48 overflow-y-auto">
-                        {schoolSuggestions.map(s => (
-                          <button 
-                            key={s}
-                            onClick={() => {
-                              setEditSchool(s);
-                              setSchoolSuggestions([]);
-                            }}
-                            className="w-full px-6 py-3 text-left font-black text-xs uppercase hover:bg-orange-50 transition-colors border-b border-gray-50 last:border-none"
-                          >
-                            {s}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                    <AnimatePresence>
+                      {editSchool.length >= 3 && (schoolSuggestions.length > 0 || isSearchingSchools) && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          className="absolute bottom-full left-0 right-0 bg-white border-2 border-black rounded-2xl shadow-2xl mb-4 overflow-hidden z-[110] max-h-60 overflow-y-auto"
+                        >
+                          {isSearchingSchools ? (
+                            <div className="p-10 text-center flex flex-col items-center gap-4">
+                              <Loader2 className="text-orange-600 animate-spin" size={24} />
+                              <p className="text-[8px] font-black uppercase tracking-widest text-gray-400">Searching Registry...</p>
+                            </div>
+                          ) : (
+                            <>
+                              {schoolSuggestions.map(s => (
+                                <button 
+                                  key={s}
+                                  onClick={() => {
+                                    setEditSchool(s);
+                                    setSchoolSuggestions([]);
+                                  }}
+                                  className="w-full px-6 py-4 text-left font-black text-xs uppercase hover:bg-orange-50 transition-colors border-b border-gray-50 last:border-none flex items-center justify-between group"
+                                >
+                                  <span>{s}</span>
+                                  <Check size={14} className="text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </button>
+                              ))}
+                              {schoolSuggestions.length === 0 && (
+                                <div className="p-6 text-center text-[8px] font-black uppercase text-gray-300">No results found</div>
+                              )}
+                            </>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
               </div>

@@ -20,7 +20,7 @@ export function ExploreView({ onNavigate, profile }: ExploreViewProps) {
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedFilters, setSelectedFilters] = useState({
     category: 'All',
-    maxDistance: 50, // default 50 miles
+    maxDistance: 100, // Increased default
     startDate: '',
     endDate: ''
   });
@@ -93,7 +93,7 @@ export function ExploreView({ onNavigate, profile }: ExploreViewProps) {
                            opp.tags.some(t => t.toLowerCase() === selectedFilters.category.toLowerCase());
     
     let matchesDistance = true;
-    if (userCoords && opp.coords) {
+    if (userCoords && opp.coords && selectedFilters.maxDistance < 100) {
       const dist = calculateDistance(userCoords.lat, userCoords.lng, opp.coords.lat, opp.coords.lng);
       matchesDistance = dist <= selectedFilters.maxDistance;
     }
@@ -194,7 +194,7 @@ export function ExploreView({ onNavigate, profile }: ExploreViewProps) {
 
                             <div className="space-y-4">
                                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100 pb-2 flex items-center gap-2">
-                                 <Navigation size={10} /> Max Distance ({selectedFilters.maxDistance} miles)
+                                 <Navigation size={10} /> {selectedFilters.maxDistance === 100 ? 'Regional (All results)' : `Max Distance (${selectedFilters.maxDistance} miles)`}
                                </h4>
                                <div className="pt-2">
                                  <input 
@@ -206,6 +206,9 @@ export function ExploreView({ onNavigate, profile }: ExploreViewProps) {
                                     onChange={(e) => setSelectedFilters(prev => ({ ...prev, maxDistance: parseInt(e.target.value) }))}
                                     className="w-full accent-black h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer"
                                  />
+                                 <p className="mt-2 text-[8px] font-black uppercase tracking-widest text-gray-300">
+                                   {selectedFilters.maxDistance === 100 ? 'Showing all wide-variety regional results' : 'Filtering by local proximity'}
+                                 </p>
                                </div>
                             </div>
 

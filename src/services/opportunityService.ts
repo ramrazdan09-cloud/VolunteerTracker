@@ -27,32 +27,31 @@ export interface VolunteerOpportunity {
   coords?: { lat: number; lng: number };
 }
 
-export async function fetchNearbyOpportunities(location: string, coords?: { lat: number; lng: number }, state?: string | null, radius: number = 50): Promise<VolunteerOpportunity[]> {
+export async function fetchNearbyOpportunities(location: string, coords?: { lat: number; lng: number }, state?: string | null, radius: number = 100): Promise<VolunteerOpportunity[]> {
   try {
     const ai = getAI();
     let locationContext = coords 
-      ? `within ${radius} miles of latitude ${coords.lat.toFixed(4)}, longitude ${coords.lng.toFixed(4)}` 
-      : `within ${radius} miles of ${location}`;
+      ? `within a 100-mile radius of latitude ${coords.lat.toFixed(4)}, longitude ${coords.lng.toFixed(4)}` 
+      : `within 100 miles of ${location}`;
     
     if (state && !location.includes(state)) {
       locationContext += ` in ${state}`;
     }
 
-    const prompt = `Search for 12-15 real, active volunteer opportunities or organizations for high school students ${locationContext}. 
-    Focus on local food banks, animal shelters, tutoring centers, and community gardens.
+    const prompt = `Search for 20-30 real, active volunteer opportunities or organizations for high school students ${locationContext}. 
+    I want a HIGH VARIETY of options: local food banks, animal shelters, tutoring centers, community gardens, environmental cleanups, healthcare/hospital volunteering, library assistants, and youth sports coaching.
     Ensure you find REAL organizations with valid URLs.
     
-    Include some opportunities that are specifically close to the center and some up to the ${radius} mile limit.
-    Provide the response as a JSON array of objects with the following keys:
+    Focus on representing a diverse range of causes. provide the response as a JSON array of objects with the following keys:
     title (event/org name), organization, organizationMission (brief 1-2 sentence mission or description of work), description (short, engaging event description), url (direct link), location (city/address), hours (est per event/week), tags (array of 2-3 categories), date (next available date in YYYY-MM-DD, or "Ongoing"), latitude, longitude.
     
-    If you cannot find specific upcoming events, provide information for major local non-profits that regularly accept student volunteers in that area.`;
+    If search results are sparse in the immediate area, expand the search to the entire state of ${state || 'the region'} to ensure at least 20 items are returned.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
-        systemInstruction: "You are a specialized community service locator. Your goal is to connect students with real-world impact. Verify that URLs are real. If search results are sparse, look for regional chapters of major non-profits (Red Cross, Habitat for Humanity, etc.) in the specific area mentioned.",
+        systemInstruction: "You are a specialized community service locator. Your goal is to connect students with real-world impact. Verify that URLs are real. Prioritize variety and quantity. Do not limit results strictly by distance if it means returning fewer than 15 items.",
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
