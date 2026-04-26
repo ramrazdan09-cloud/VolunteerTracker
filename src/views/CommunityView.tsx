@@ -3,10 +3,11 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   MessageSquare, Plus, Users, School, MapPin, Send, Loader2, Sparkles, 
   Filter, Bookmark, Heart, Share2, Search, Megaphone, Trophy, 
-  Lightbulb, Calendar, ExternalLink, Image as ImageIcon, Link as LinkIcon, ArrowRight, ChevronDown
+  Lightbulb, Calendar, ExternalLink, Image as ImageIcon, Link as LinkIcon, ArrowRight, ChevronDown,
+  Flag
 } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { CommunityPost, createCommunityPost, getRegionalPosts, auth, UserProfile, saveUserProfile, toggleLikePost } from '../lib/firebase';
+import { CommunityPost, createCommunityPost, getRegionalPosts, auth, UserProfile, saveUserProfile, toggleLikePost, reportPost } from '../lib/firebase';
 import { searchSchools } from '../services/opportunityService';
 import type { Screen } from '../App';
 
@@ -132,6 +133,21 @@ export function CommunityView({ profile, onProfileUpdate, onNavigate }: Communit
       // Revert if error? (Too complex for now, but good practice)
     }
   };
+  
+  const handleReportPost = async (postId: string) => {
+    if (!auth.currentUser) return;
+    const userId = auth.currentUser.uid;
+    
+    if (confirm('Report this post for moderation?')) {
+      try {
+        await reportPost(postId, userId);
+        setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+        alert('Post reported. Thank you for keeping our community safe.');
+      } catch (error) {
+        console.error("Error reporting post:", error);
+      }
+    }
+  };
 
   const filteredAndSortedPosts = posts
     .filter(post => activeFilter === 'all' || post.type === activeFilter)
@@ -148,7 +164,7 @@ export function CommunityView({ profile, onProfileUpdate, onNavigate }: Communit
 
   // School Selection Logic
   useEffect(() => {
-    if (tempSchool.length < 3) {
+    if (tempSchool.length < 2) {
       setSchoolSuggestions([]);
       setIsSearchingSchools(false);
       return;
@@ -165,7 +181,7 @@ export function CommunityView({ profile, onProfileUpdate, onNavigate }: Communit
         setSchoolSuggestions(results);
         setIsSearchingSchools(false);
       }
-    }, 400);
+    }, 250);
 
     return () => clearTimeout(timer);
   }, [tempSchool, tempState]);
@@ -218,14 +234,14 @@ export function CommunityView({ profile, onProfileUpdate, onNavigate }: Communit
                     <h3 className="text-2xl font-black uppercase">Where do you go?</h3>
                     
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block text-left">Which State?</label>
+                       <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block text-left">State (CA Focus)</label>
                        <select 
                          value={tempState}
                          onChange={(e) => setTempState(e.target.value)}
-                         className="w-full px-6 py-4 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold focus:border-black focus:ring-0"
+                         className="w-full px-6 py-4 bg-orange-50/50 border-2 border-orange-100 rounded-xl font-bold focus:border-black focus:ring-0"
                        >
-                         <option value="">Select State</option>
-                         {['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'].map(s => (
+                         <option value="CA">California (CA)</option>
+                         {['AL','AK','AZ','AR','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'].map(s => (
                            <option key={s} value={s}>{s}</option>
                          ))}
                        </select>
@@ -513,9 +529,19 @@ export function CommunityView({ profile, onProfileUpdate, onNavigate }: Communit
                            <MessageSquare size={18} /> {post.commentCount || 0}
                         </button>
                       </div>
-                      <button className="text-gray-400 hover:text-black transition-colors">
-                        <Share2 size={18} />
-                      </button>
+                      <div className="flex gap-4">
+                        <button 
+                          onClick={() => handleReportPost(post.id!)}
+                          className="text-gray-400 hover:text-red-600 transition-colors flex items-center gap-2 font-black text-xs"
+                          title="Report Post"
+                        >
+                          <Flag size={18} />
+                          <span className="hidden md:inline">REPORT</span>
+                        </button>
+                        <button className="text-gray-400 hover:text-black transition-colors">
+                          <Share2 size={18} />
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 ))}

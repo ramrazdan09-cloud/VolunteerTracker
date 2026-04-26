@@ -116,6 +116,7 @@ export interface CommunityPost {
   region: string;
   tags: string[];
   likes?: string[];
+  reportedBy?: string[];
   commentCount?: number;
   createdAt: Timestamp;
 }
@@ -243,6 +244,18 @@ export const toggleLikePost = async (postId: string, userId: string) => {
       return !isLiked;
     }
     return false;
+  } catch (error) {
+    handleFirestoreError(error, 'update', `community_posts/${postId}`);
+  }
+};
+
+export const reportPost = async (postId: string, userId: string) => {
+  try {
+    const postRef = doc(db, 'community_posts', postId);
+    await updateDoc(postRef, {
+      reportedBy: arrayUnion(userId)
+    });
+    return true;
   } catch (error) {
     handleFirestoreError(error, 'update', `community_posts/${postId}`);
   }

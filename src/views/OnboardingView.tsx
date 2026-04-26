@@ -14,7 +14,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
   const [schoolName, setSchoolName] = useState('');
   const [hourGoal, setHourGoal] = useState(40);
   const [grade, setGrade] = useState('');
-  const [state, setState] = useState('');
+  const [state, setState] = useState('CA');
   const [locationAllowed, setLocationAllowed] = useState<boolean | undefined>(undefined);
   
   const [schoolSuggestions, setSchoolSuggestions] = useState<string[]>([]);
@@ -34,18 +34,16 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
 
     setIsSearchingSchools(true);
     const timer = setTimeout(async () => {
-      if (state) {
-        const results = await searchSchools(schoolName, state);
-        setSchoolSuggestions(results);
-        setIsSearchingSchools(false);
-        setShowSuggestions(true);
-      }
-    }, 400); 
+      const results = await searchSchools(schoolName, 'CA');
+      setSchoolSuggestions(results);
+      setIsSearchingSchools(false);
+      setShowSuggestions(true);
+    }, 250); 
 
     return () => {
       clearTimeout(timer);
     };
-  }, [schoolName, state]);
+  }, [schoolName]);
 
   const selectSchool = (name: string) => {
     setSchoolName(name);
@@ -64,19 +62,11 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
     return () => window.removeEventListener('click', handleClickOutside);
   }, []);
 
-  const states = [
-    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 
-    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 
-    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 
-    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 
-    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
-  ];
-
   const handleNext = () => {
-    if (step < 6) {
+    if (step < 5) {
       setStep(step + 1);
     } else {
-      onComplete(schoolName, hourGoal, grade, locationAllowed, state, username);
+      onComplete(schoolName, hourGoal, grade, locationAllowed, 'CA', username);
     }
   };
 
@@ -109,31 +99,8 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
     },
     {
       id: 2,
-      title: "First, which state are you in?",
-      description: "This helps us identify the correct school registry.",
-      content: (
-        <div className="grid grid-cols-5 md:grid-cols-10 gap-2 w-full max-w-2xl px-4 overflow-y-auto max-h-[300px] p-4 bg-gray-50 rounded-3xl border-2 border-gray-100">
-          {states.map((s) => (
-            <button
-              key={s}
-              onClick={() => { setState(s); setStep(3); }}
-              className={cn(
-                "py-3 rounded-xl font-black text-xs transition-all border-2",
-                state === s ? "bg-orange-600 text-white border-orange-600 shadow-lg" : "bg-white text-black border-gray-100 hover:border-black"
-              )}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      )
-    },
-    {
-      id: 3,
       title: "Where do you go to school?",
-      description: state 
-        ? `Searching for high schools in ${state}. We use this to connect you with events at your school and local community.` 
-        : "This helps us show you real volunteer opportunities and regional community posts.",
+      description: "Focusing on California High Schools for now. This helps us connect you with events at your school and local community.",
       content: (
         <div className="space-y-6 w-full max-w-md relative school-search-container">
           <div className="relative z-50 border-2 border-black rounded-2xl overflow-hidden bg-white shadow-[8px_8px_0px_rgba(0,0,0,1)]">
@@ -155,7 +122,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           </div>
 
           <AnimatePresence>
-            {showSuggestions && (schoolName.length >= 2) && (
+            {showSuggestions && (
               <motion.div 
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -166,7 +133,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                   <div className="p-10 text-center flex flex-col items-center gap-4">
                     <Loader2 className="text-orange-600 animate-spin" size={32} />
                     <p className="text-gray-400 font-black uppercase tracking-widest text-[10px]">
-                      Searching Registry in {state}...
+                      Searching CA Registry...
                     </p>
                   </div>
                 ) : schoolSuggestions.length > 0 ? (
@@ -194,6 +161,25 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                        Use "{schoolName}" exactly
                     </button>
                    </>
+                ) : schoolName.length < 2 ? (
+                  <>
+                    <div className="px-6 py-4 bg-orange-50 border-b border-black/5 text-[10px] font-black uppercase tracking-widest text-orange-600">
+                      Popular Schools
+                    </div>
+                    {["Paloma Valley High School", "Orange Glen High School", "Vista Murrieta High School", "Heritage High School", "Murrieta Valley High School"].map((school) => (
+                      <button
+                        key={school}
+                        onClick={() => selectSchool(school)}
+                        className="w-full text-left px-6 py-5 hover:bg-orange-50 font-black text-sm uppercase transition-all flex items-center justify-between group border-b border-gray-100 last:border-none hover:pl-8"
+                      >
+                        <div className="flex items-center gap-3">
+                          <GraduationCap size={16} className={cn("text-gray-300 group-hover:text-orange-600 transition-colors")} />
+                          <span className="group-hover:text-orange-600 transition-colors">{school}</span>
+                        </div>
+                        <Check size={16} className="text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </button>
+                    ))}
+                  </>
                 ) : (
                   <div className="p-10 text-center flex flex-col items-center gap-4">
                     <Search className="text-gray-200" size={32} />
@@ -221,7 +207,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           </AnimatePresence>
 
           <button 
-            onClick={() => { setLocationAllowed(true); setStep(4); }}
+            onClick={() => { setLocationAllowed(true); setStep(step + 1); }}
             className="flex items-center gap-3 text-sm font-black uppercase tracking-widest text-orange-600 hover:text-orange-700 transition-colors"
           >
             <Navigation size={18} />
@@ -231,7 +217,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
       )
     },
     {
-      id: 4,
+      id: 3,
       title: "What grade are you in?",
       description: "Some events are only for specific year groups.",
       content: (
@@ -239,7 +225,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           {['9th', '10th', '11th', '12th'].map((g) => (
             <button
               key={g}
-              onClick={() => { setGrade(g); setStep(5); }}
+              onClick={() => { setGrade(g); setStep(4); }}
               className={cn(
                 "py-6 border-2 border-black rounded-2xl font-black text-xl transition-all shadow-[6px_6px_0px_rgba(0,0,0,1)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[8px_8px_0px_rgba(0,0,0,1)]",
                 grade === g ? "bg-orange-600 text-white border-orange-600" : "bg-white text-black"
@@ -252,7 +238,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
       )
     },
     {
-      id: 5,
+      id: 4,
       title: "How many hours is your goal?",
       description: "Most students aim for 40 hours per year.",
       content: (
@@ -279,7 +265,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
       )
     },
     {
-      id: 6,
+      id: 5,
       title: "Ready to start tracking?",
       description: "Your personalized dashboard is waiting for you.",
       content: (
@@ -329,7 +315,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           Volunteer<span className="text-orange-600">Tracker</span>
         </span>
         <div className="flex gap-2">
-          {[1, 2, 3, 4, 5, 6].map((s) => (
+          {[1, 2, 3, 4, 5].map((s) => (
             <div 
               key={s} 
               className={cn(

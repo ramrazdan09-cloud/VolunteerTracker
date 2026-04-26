@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import { POPULAR_CA_SCHOOLS } from "../constants/schools";
 
 let aiClient: GoogleGenAI | null = null;
 
@@ -142,22 +143,32 @@ function getFeaturedFallbacks(region: string): VolunteerOpportunity[] {
 }
 
 export async function searchSchools(query: string, state: string): Promise<string[]> {
-  if (!query || query.length < 3) return [];
+  if (!query || query.length < 2) return [];
+
+  // 1. Fast path: Search local popular list first
+  const localQuery = query.toLowerCase();
+  const localMatches = POPULAR_CA_SCHOOLS.filter(school => 
+    school.toLowerCase().includes(localQuery)
+  ).slice(0, 10);
+
+  // If we have strong matches locally, return them immediately for "instant" feel
+  if (localMatches.length >= 2 || (localMatches.length === 1 && localMatches[0].toLowerCase() === localQuery)) {
+    return localMatches;
+  }
   
   try {
     const ai = getAI();
-    // Prompting to specifically use Google Search to find the schools
-    const prompt = `Search the internet to find 5-10 real, existing high schools in the state of ${state} that contain or are very similar to "${query}". 
-    Format the result strictly as a JSON array of strings containing the full official names of the schools. 
-    Example: If searching for "Orange Glen" in CA, it should definitely return ["Orange Glen High School"].
-    If you cannot find any, try searching for high schools in the city of ${query} if "${query}" looks like a city name. 
-    Only return the JSON array, no preamble.`;
+    // Prompting to specifically use Google Search to find California high schools
+    const prompt = `Search the internet to find 5-10 real, currently operating high schools in CALIFORNIA that match or are related to "${query}". 
+    Format the result strictly as a JSON array of strings containing the full official names of the schools (e.g., "Paloma Valley High School", "Orange Glen High School"). 
+    IMPORTANT: Focus on making sure these are REAL schools. If "${query}" is specific, ensure you find the EXACT match if it exists. 
+    Only return the JSON array, no other text.`;
     
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
-        systemInstruction: "You are a specialized school directory assistant. You MUST use Google Search to find and verify the existence of schools before returning them. Always provide the full name, e.g., 'X High School'. Only return schools in the requested state.",
+        systemInstruction: "You are a specialized school directory assistant for California. You MUST provide the full official names of REAL high schools. Verify the existence of the school via search before returning it.",
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,

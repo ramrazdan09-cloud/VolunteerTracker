@@ -63,6 +63,7 @@
         "region": { "type": "string", "description": "The state or city for filtering." },
         "tags": { "type": "array", "items": { "type": "string" } },
         "likes": { "type": "array", "items": { "type": "string" }, "description": "Array of user IDs who liked the post." },
+        "reportedBy": { "type": "array", "items": { "type": "string" }, "description": "Array of user IDs who reported the post." },
         "commentCount": { "type": "number", "description": "Total number of comments on this post." },
         "createdAt": { "type": "string", "format": "date-time" }
       },

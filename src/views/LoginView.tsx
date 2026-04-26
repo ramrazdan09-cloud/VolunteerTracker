@@ -63,23 +63,32 @@ export function LoginView() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <button
-              onClick={handleLogin}
-              disabled={isAuthenticating}
-              className={cn(
-                "px-12 py-6 rounded-2xl font-black text-lg uppercase tracking-wider transition-all duration-300 shadow-2xl flex items-center gap-4",
-                isAuthenticating 
-                  ? "bg-gray-400 cursor-not-allowed text-white" 
-                  : "bg-black text-white hover:bg-orange-600 hover:scale-105 active:scale-95"
-              )}
-            >
-              {isAuthenticating ? (
-                <Loader2 size={24} className="animate-spin" />
-              ) : (
-                <LogIn size={24} />
-              )}
-              {isAuthenticating ? 'GETTING READY...' : 'CREATE ACCOUNT TO START'}
-            </button>
+            <div className="space-y-4">
+              <button
+                onClick={handleLogin}
+                disabled={isAuthenticating}
+                className={cn(
+                  "px-12 py-6 rounded-2xl font-black text-lg uppercase tracking-wider transition-all duration-300 shadow-2xl flex items-center gap-4",
+                  isAuthenticating 
+                    ? "bg-gray-400 cursor-not-allowed text-white" 
+                    : "bg-black text-white hover:bg-orange-600 hover:scale-105 active:scale-95"
+                )}
+              >
+                {isAuthenticating ? (
+                  <Loader2 size={24} className="animate-spin" />
+                ) : (
+                  <LogIn size={24} />
+                )}
+                {isAuthenticating ? 'GETTING READY...' : 'CREATE ACCOUNT TO START'}
+              </button>
+              
+              <div className="flex items-center justify-center gap-2 py-3 px-6 bg-orange-50 border-2 border-orange-100 rounded-full animate-pulse">
+                <MapPin className="text-orange-600" size={14} />
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-900">
+                  Currently exclusive to <span className="underline">California</span>. More states coming soon!
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8 text-left">

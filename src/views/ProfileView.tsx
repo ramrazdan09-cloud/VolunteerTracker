@@ -47,7 +47,7 @@ export function ProfileView({ profile, onNavigate, onSignOut, onProfileUpdate }:
 
   // School Search Logic
   useEffect(() => {
-    if (editSchool.length < 3) {
+    if (editSchool.length < 2) {
       setSchoolSuggestions([]);
       setIsSearchingSchools(false);
       return;
@@ -64,7 +64,7 @@ export function ProfileView({ profile, onNavigate, onSignOut, onProfileUpdate }:
         setSchoolSuggestions(results);
         setIsSearchingSchools(false);
       }
-    }, 400);
+    }, 250);
 
     return () => clearTimeout(timer);
   }, [editSchool, editState]);
@@ -387,19 +387,19 @@ export function ProfileView({ profile, onNavigate, onSignOut, onProfileUpdate }:
 
                 {/* School Selection */}
                 <div className="space-y-6 pt-6 border-t border-gray-100">
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block ml-4">State</label>
-                    <select 
-                      value={editState}
-                      onChange={(e) => setEditState(e.target.value)}
-                      className="w-full px-6 py-4 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold focus:border-black focus:ring-0 appearance-none"
-                    >
-                      <option value="">Select State</option>
-                      {['AL','AK','AZ', 'AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'].map(s => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                  </div>
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block ml-4">State (CA Focus)</label>
+                      <select 
+                        value={editState}
+                        onChange={(e) => setEditState(e.target.value)}
+                        className="w-full px-6 py-4 bg-gray-50 border-2 border-orange-100 rounded-xl font-bold focus:border-black focus:ring-0 appearance-none bg-orange-50/30"
+                      >
+                        <option value="CA">California (CA)</option>
+                        {['AL','AK','AZ', 'AR','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'].map(s => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
 
                   <div className="space-y-4 relative school-search-container">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block ml-4">High School Name</label>

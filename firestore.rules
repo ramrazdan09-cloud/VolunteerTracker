@@ -66,6 +66,7 @@ service cloud.firestore {
              (data.get('authorSchool', '') is string && data.get('authorSchool', '').size() <= 200) &&
              (data.get('tags', []) is list) &&
              (data.get('likes', []) is list) &&
+             (data.get('reportedBy', []) is list) &&
              (data.get('commentCount', 0) is int || data.get('commentCount', 0) is float);
     }
 
@@ -104,16 +105,24 @@ service cloud.firestore {
     }
 
     // Community Posts
-    match /community_posts/{postId} {
+      match /community_posts/{postId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && isValidCommunityPost(incoming()) && incoming().authorId == request.auth.uid;
       allow update: if (isSignedIn() && isOwner(existing().authorId) && isValidCommunityPost(incoming()) && 
                         incoming().get('likes', []) == existing().get('likes', []) && 
+                        incoming().get('reportedBy', []) == existing().get('reportedBy', []) &&
                         incoming().get('commentCount', 0) == existing().get('commentCount', 0)) ||
                        (isSignedIn() && incoming().diff(existing()).affectedKeys().hasOnly(['likes']) &&
                         (
                           (incoming().likes.size() == existing().get('likes', []).size() + 1 && incoming().likes.hasAll(existing().get('likes', [])) && request.auth.uid in incoming().likes) ||
                           (incoming().likes.size() == existing().get('likes', []).size() - 1 && existing().get('likes', []).hasAll(incoming().likes) && !(request.auth.uid in incoming().likes))
+                        )
+                       ) ||
+                       (isSignedIn() && incoming().diff(existing()).affectedKeys().hasOnly(['reportedBy']) &&
+                        (
+                          incoming().reportedBy.size() == existing().get('reportedBy', []).size() + 1 && 
+                          incoming().reportedBy.hasAll(existing().get('reportedBy', [])) && 
+                          request.auth.uid in incoming().reportedBy
                         )
                        );
       allow delete: if isSignedIn() && isOwner(existing().authorId);
