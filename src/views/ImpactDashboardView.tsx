@@ -6,11 +6,26 @@ import { PlusCircle, Loader2, Globe, ArrowRight, Bookmark, Share2 } from 'lucide
 import { useEffect, useState, MouseEvent } from 'react';
 import { fetchNearbyOpportunities, VolunteerOpportunity } from '../services/opportunityService';
 import { getCurrentLocation } from '../lib/location';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface ImpactDashboardViewProps {
   onNavigate: (screen: Screen, opportunity?: VolunteerOpportunity) => void;
   profile: UserProfile;
 }
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-black text-white px-4 py-3 rounded-2xl border-2 border-black shadow-2xl text-left">
+        <p className="text-[10px] font-black uppercase tracking-widest text-orange-500 mb-1">{label}</p>
+        <p className="text-sm font-black uppercase">
+          {payload[0].value} <span className="text-gray-400 font-medium">Hours</span>
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
 
 export function ImpactDashboardView({ onNavigate, profile }: ImpactDashboardViewProps) {
   const [nearbyEvents, setNearbyEvents] = useState<VolunteerOpportunity[]>([]);
@@ -55,6 +70,45 @@ export function ImpactDashboardView({ onNavigate, profile }: ImpactDashboardView
 
   const totalCalculatedHours = activities.reduce((sum, act) => sum + act.hours, 0);
   const progressPercentage = Math.min((totalCalculatedHours / profile.hourGoal) * 100, 100);
+
+  // Generate last six months data dynamically
+  const chartData = (() => {
+    const list = [];
+    const today = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const year = d.getFullYear();
+      const monthNum = String(d.getMonth() + 1).padStart(2, '0');
+      const monthKey = `${year}-${monthNum}`;
+      const label = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }).toUpperCase();
+      list.push({
+        key: monthKey,
+        label: label,
+        hours: 0,
+      });
+    }
+
+    activities.forEach(activity => {
+      let activityMonthKey = '';
+      if (activity.date) {
+        activityMonthKey = activity.date.substring(0, 7); // "YYYY-MM"
+      } else if (activity.createdAt) {
+        const d = activity.createdAt.toDate();
+        const year = d.getFullYear();
+        const monthNum = String(d.getMonth() + 1).padStart(2, '0');
+        activityMonthKey = `${year}-${monthNum}`;
+      }
+
+      if (activityMonthKey) {
+        const match = list.find(m => m.key === activityMonthKey);
+        if (match) {
+          match.hours += activity.hours;
+        }
+      }
+    });
+
+    return list;
+  })();
 
   const handleShare = async (e: MouseEvent, title: string, url: string, organization?: string) => {
     e.stopPropagation();
@@ -110,7 +164,63 @@ export function ImpactDashboardView({ onNavigate, profile }: ImpactDashboardView
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* RECENT ACTIVITY */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-12">
+            {/* MONTHLY VOLUNTEERING TRENDS */}
+            <div id="monthly-volunteer-chart-container" className="bg-orange-50/40 border-2 border-orange-100/60 p-6 md:p-8 rounded-[2rem] shadow-sm space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <span className="text-orange-600 font-black uppercase tracking-widest text-[10px] block mb-1">Impact Analytics</span>
+                  <h2 id="monthly-volunteer-chart-heading" className="text-2xl font-black text-black uppercase tracking-tight">Volunteering Trends</h2>
+                </div>
+                <span className="bg-white border-2 border-orange-100/50 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest text-orange-800 shadow-sm">
+                  Last 6 Months
+                </span>
+              </div>
+
+              <div className="h-64 w-full">
+                {activities.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={chartData}
+                      margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffedd5" />
+                      <XAxis
+                        dataKey="label"
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: '#c2410c', fontSize: 10, fontWeight: '900', fontFamily: 'Inter' }}
+                      />
+                      <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: '#c2410c', fontSize: 10, fontWeight: '900', fontFamily: 'Inter' }}
+                      />
+                      <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(234, 88, 12, 0.04)' }} />
+                      <Bar
+                        dataKey="hours"
+                        fill="#ea580c"
+                        radius={[8, 8, 0, 0]}
+                        maxBarSize={45}
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.hours > 0 ? '#ea580c' : '#fdba74'}
+                            className="transition-all duration-300 hover:fill-orange-500"
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full w-full flex flex-col items-center justify-center text-center p-6 bg-white rounded-2xl border border-dashed border-orange-200">
+                    <p className="text-xs font-black uppercase tracking-widest text-orange-900/40">No activity data to chart yet</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="flex justify-between items-center bg-white border-b-2 border-gray-100 pb-4">
               <h2 className="text-xl font-black text-black uppercase">What you've done recently</h2>
               <button 
