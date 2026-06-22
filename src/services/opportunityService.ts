@@ -187,18 +187,9 @@ export async function searchSchools(query: string, state: string): Promise<strin
     return data;
   } catch (error) {
     console.error("Error searching schools:", error);
-    
-    // Smooth Fallback Experience: If there is a quota or API issue, dynamically generate
-    // beautiful plausible suggestions matching their query to keep the UX extremely responsive.
-    const words = query.trim().split(/\s+/);
-    const capitalized = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-    
-    const fallbackSuggestions = [
-      `${capitalized} High School`,
-      `${capitalized} Charter Academy`,
-      `${capitalized} Prep School`
-    ];
-
-    return fallbackSuggestions;
+    // If the API call fails or is limited, we return an empty array.
+    // The UI is built to handle this by offering a "Use anyway" manual input button,
+    // which is accurate and doesn't fabricate non-existent schools.
+    return [];
   }
 }

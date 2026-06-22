@@ -186,23 +186,6 @@ export function ProfileView({ profile, onNavigate, onSignOut, onProfileUpdate }:
                  <LogOut size={18} /> SIGN OUT
                </button>
             </div>
-
-            <div className="p-10 border-2 border-gray-100 rounded-[3rem] space-y-6 bg-white shadow-sm">
-               <h3 className="font-black text-black uppercase tracking-widest text-xs flex items-center gap-3">
-                  <Award className="text-orange-600" size={16} /> Impact Badges
-               </h3>
-               <div className="flex flex-wrap gap-3">
-                  {totalHours >= 10 && (
-                    <div title="Pioneer: 10+ Hours" className="w-12 h-12 bg-orange-600 text-white rounded-2xl flex items-center justify-center font-black">P</div>
-                  )}
-                  {activities.length >= 5 && (
-                    <div title="Consistent: 5+ Activities" className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center font-black">C</div>
-                  )}
-                  <div className="w-12 h-12 bg-gray-50 border-2 border-dashed border-gray-100 rounded-2xl flex items-center justify-center text-gray-200">
-                    <Settings size={16} />
-                  </div>
-               </div>
-            </div>
           </div>
 
           {/* Activity/Saved Feed */}
@@ -436,19 +419,27 @@ export function ProfileView({ profile, onNavigate, onSignOut, onProfileUpdate }:
                             <>
                               {schoolSuggestions.length > 0 ? (
                                 <>
-                                  {schoolSuggestions.map(s => (
-                                    <button 
-                                      key={s}
-                                      onClick={() => {
-                                        setEditSchool(s);
-                                        setSchoolSuggestions([]);
-                                      }}
-                                      className="w-full px-6 py-4 text-left font-black text-xs uppercase hover:bg-orange-50 transition-colors border-b border-gray-50 last:border-none flex items-center justify-between group"
-                                    >
-                                      <span>{s}</span>
-                                      <Check size={14} className="text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    </button>
-                                  ))}
+                                  {schoolSuggestions.map(s => {
+                                    const match = s.match(/^(.*?)\s*\((.*?)\)$/);
+                                    const displayName = match ? match[1] : s;
+                                    const city = match ? match[2] : '';
+                                    return (
+                                      <button 
+                                        key={s}
+                                        onClick={() => {
+                                          setEditSchool(s);
+                                          setSchoolSuggestions([]);
+                                        }}
+                                        className="w-full px-6 py-3 text-left hover:bg-orange-50 transition-all border-b border-gray-50 last:border-none flex items-center justify-between group"
+                                      >
+                                        <div className="flex flex-col text-left leading-tight">
+                                          <span className="font-extrabold text-xs uppercase text-black group-hover:text-orange-600 transition-colors">{displayName}</span>
+                                          {city && <span className="text-[9px] text-gray-400 font-bold tracking-widest mt-0.5">{city}, CA</span>}
+                                        </div>
+                                        <Check size={14} className="text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                      </button>
+                                    );
+                                  })}
                                   <button 
                                     onClick={() => { setEditSchool(editSchool); setSchoolSuggestions([]); }}
                                     className="w-full py-3 bg-gray-50 text-[8px] font-black uppercase hover:bg-black hover:text-white transition-colors"

@@ -180,7 +180,7 @@ export function PublicProfileView({ userId, onNavigate, currentUserProfile, onPr
                )}
             </div>
 
-            <div className="p-10 border-2 border-gray-100 rounded-[3rem] space-y-6 bg-white shadow-sm">
+            <div className="hidden p-10 border-2 border-gray-100 rounded-[3rem] space-y-6 bg-white shadow-sm">
                <h3 className="font-black text-black uppercase tracking-widest text-xs flex items-center gap-3">
                   <Award className="text-orange-600" size={16} /> Verified Badges
                </h3>

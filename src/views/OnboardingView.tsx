@@ -141,19 +141,27 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                     <div className="px-6 py-2 bg-gray-50 border-b border-black/5 text-[8px] font-black uppercase tracking-widest text-gray-400">
                       Found {schoolSuggestions.length} schools matching "{schoolName}"
                     </div>
-                    {schoolSuggestions.map((school) => (
-                      <button
-                        key={school}
-                        onClick={() => selectSchool(school)}
-                        className="w-full text-left px-6 py-5 hover:bg-orange-50 font-black text-sm uppercase transition-all flex items-center justify-between group border-b border-gray-100 last:border-none hover:pl-8"
-                      >
-                        <div className="flex items-center gap-3">
-                          <GraduationCap size={16} className={cn("text-gray-300 group-hover:text-orange-600 transition-colors")} />
-                          <span className="group-hover:text-orange-600 transition-colors">{school}</span>
-                        </div>
-                        <Check size={16} className="text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </button>
-                    ))}
+                    {schoolSuggestions.map((school) => {
+                      const match = school.match(/^(.*?)\s*\((.*?)\)$/);
+                      const displayName = match ? match[1] : school;
+                      const city = match ? match[2] : '';
+                      return (
+                        <button
+                          key={school}
+                          onClick={() => selectSchool(school)}
+                          className="w-full text-left px-6 py-4 hover:bg-orange-50 font-black uppercase transition-all flex items-center justify-between group border-b border-gray-100 last:border-none"
+                        >
+                          <div className="flex items-center gap-3">
+                            <GraduationCap size={18} className="text-gray-300 group-hover:text-orange-600 transition-colors shrink-0" />
+                            <div className="flex flex-col text-left leading-tight">
+                              <span className="group-hover:text-orange-600 text-sm font-black transition-colors">{displayName}</span>
+                              {city && <span className="text-[10px] text-gray-400 font-bold tracking-widest mt-0.5">{city}, CA</span>}
+                            </div>
+                          </div>
+                          <Check size={16} className="text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                        </button>
+                      );
+                    })}
                     <button 
                        onClick={() => selectSchool(schoolName)}
                        className="w-full text-left px-6 py-4 bg-gray-50 hover:bg-orange-600 hover:text-white font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 border-t border-black/10 transition-colors"
@@ -164,21 +172,29 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                 ) : schoolName.length < 2 ? (
                   <>
                     <div className="px-6 py-4 bg-orange-50 border-b border-black/5 text-[10px] font-black uppercase tracking-widest text-orange-600">
-                      Popular Schools
+                      Popular CA Schools
                     </div>
-                    {["Paloma Valley High School", "Orange Glen High School", "Vista Murrieta High School", "Heritage High School", "Murrieta Valley High School"].map((school) => (
-                      <button
-                        key={school}
-                        onClick={() => selectSchool(school)}
-                        className="w-full text-left px-6 py-5 hover:bg-orange-50 font-black text-sm uppercase transition-all flex items-center justify-between group border-b border-gray-100 last:border-none hover:pl-8"
-                      >
-                        <div className="flex items-center gap-3">
-                          <GraduationCap size={16} className={cn("text-gray-300 group-hover:text-orange-600 transition-colors")} />
-                          <span className="group-hover:text-orange-600 transition-colors">{school}</span>
-                        </div>
-                        <Check size={16} className="text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </button>
-                    ))}
+                    {["Paloma Valley High School (Menifee)", "Orange Glen High School (Escondido)", "Vista Murrieta High School (Murrieta)", "Heritage High School (Menifee)", "Murrieta Valley High School (Murrieta)"].map((school) => {
+                      const match = school.match(/^(.*?)\s*\((.*?)\)$/);
+                      const displayName = match ? match[1] : school;
+                      const city = match ? match[2] : '';
+                      return (
+                        <button
+                          key={school}
+                          onClick={() => selectSchool(school)}
+                          className="w-full text-left px-6 py-4 hover:bg-orange-50 font-black uppercase transition-all flex items-center justify-between group border-b border-gray-100 last:border-none"
+                        >
+                          <div className="flex items-center gap-3">
+                            <GraduationCap size={18} className="text-gray-300 group-hover:text-orange-600 transition-colors shrink-0" />
+                            <div className="flex flex-col text-left leading-tight">
+                              <span className="group-hover:text-orange-600 text-sm font-black transition-colors">{displayName}</span>
+                              {city && <span className="text-[10px] text-gray-400 font-bold tracking-widest mt-0.5">{city}, CA</span>}
+                            </div>
+                          </div>
+                          <Check size={16} className="text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                        </button>
+                      );
+                    })}
                   </>
                 ) : (
                   <div className="p-10 text-center flex flex-col items-center gap-4">
