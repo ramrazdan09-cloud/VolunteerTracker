@@ -43,27 +43,37 @@ export function ImpactDashboardView({ onNavigate, profile }: ImpactDashboardView
       
       const currentUserId = auth.currentUser?.uid;
       
-      if (currentUserId) {
-        const [userActivities, userBookmarks] = await Promise.all([
-          getUserActivities(currentUserId),
-          getUserBookmarks(currentUserId)
-        ]);
-        setActivities(userActivities);
-        setBookmarks(userBookmarks.slice(0, 3)); // Just show recent 3
+      try {
+        if (currentUserId) {
+          const [userActivities, userBookmarks] = await Promise.all([
+            getUserActivities(currentUserId),
+            getUserBookmarks(currentUserId)
+          ]);
+          setActivities(userActivities || []);
+          setBookmarks((userBookmarks || []).slice(0, 3)); // Just show recent 3
+        }
+      } catch (err) {
+        console.warn("Error loading user activities or bookmarks:", err);
+      } finally {
         setIsLoadingActivities(false);
         setIsLoadingBookmarks(false);
       }
 
-      let coords: { lat: number; lng: number } | undefined = undefined;
-      
-      if (profile?.locationAllowed) {
-        const browserCoords = await getCurrentLocation();
-        if (browserCoords) coords = browserCoords;
-      }
+      try {
+        let coords: { lat: number; lng: number } | undefined = undefined;
+        
+        if (profile?.locationAllowed) {
+          const browserCoords = await getCurrentLocation();
+          if (browserCoords) coords = browserCoords;
+        }
 
-      const data = await fetchNearbyOpportunities(profile.schoolName || 'nearby', coords, profile.state);
-      setNearbyEvents(data.slice(0, 2)); // Just top 2 for dashboard
-      setIsLoadingEvents(false);
+        const data = await fetchNearbyOpportunities(profile.schoolName || 'nearby', coords, profile.state);
+        setNearbyEvents(data.slice(0, 2)); // Just top 2 for dashboard
+      } catch (err) {
+        console.warn("Error loading nearby opportunities:", err);
+      } finally {
+        setIsLoadingEvents(false);
+      }
     }
     loadData();
   }, [profile.schoolName, profile.locationAllowed, profile.state]);

@@ -6,6 +6,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Health check test connection
+    match /test/{docId} {
+      allow read: if true;
+    }
+
     // --- PRIMITIVE HELPERS ---
     function isSignedIn() { return request.auth != null; }
     function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }

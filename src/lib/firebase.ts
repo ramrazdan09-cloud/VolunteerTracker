@@ -121,7 +121,7 @@ export interface CommunityPost {
   createdAt: Timestamp;
 }
 
-export const getUserProfile = async (uid: string) => {
+export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
   try {
     const docRef = doc(db, 'users', uid);
     const docSnap = await getDoc(docRef);
@@ -130,7 +130,8 @@ export const getUserProfile = async (uid: string) => {
     }
     return null;
   } catch (error) {
-    handleFirestoreError(error, 'get', `users/${uid}`);
+    console.warn("Could not fetch user profile:", error);
+    return null;
   }
 };
 
@@ -155,7 +156,7 @@ export const logVolunteerActivity = async (uid: string, activity: Omit<Volunteer
   }
 };
 
-export const getUserActivities = async (uid: string) => {
+export const getUserActivities = async (uid: string): Promise<VolunteerActivity[]> => {
   try {
     const activitiesRef = collection(db, 'users', uid, 'activities');
     const q = query(activitiesRef, orderBy('createdAt', 'desc'));
@@ -165,7 +166,8 @@ export const getUserActivities = async (uid: string) => {
       ...doc.data()
     })) as VolunteerActivity[];
   } catch (error) {
-    handleFirestoreError(error, 'list', `users/${uid}/activities`);
+    console.warn("Could not fetch user activities:", error);
+    return [];
   }
 };
 
@@ -194,7 +196,7 @@ export const toggleBookmark = async (uid: string, opportunity: { id: string; tit
   }
 };
 
-export const getUserBookmarks = async (uid: string) => {
+export const getUserBookmarks = async (uid: string): Promise<VolunteerBookmark[]> => {
   try {
     const bookmarksRef = collection(db, 'users', uid, 'bookmarks');
     const q = query(bookmarksRef, orderBy('savedAt', 'desc'));
@@ -204,14 +206,20 @@ export const getUserBookmarks = async (uid: string) => {
       ...doc.data()
     })) as VolunteerBookmark[];
   } catch (error) {
-    handleFirestoreError(error, 'list', `users/${uid}/bookmarks`);
+    console.warn("Could not fetch user bookmarks:", error);
+    return [];
   }
 };
 
 export const isBookmarked = async (uid: string, opportunityId: string) => {
-  const bookmarkRef = doc(db, 'users', uid, 'bookmarks', opportunityId);
-  const bookmarkSnap = await getDoc(bookmarkRef);
-  return bookmarkSnap.exists();
+  try {
+    const bookmarkRef = doc(db, 'users', uid, 'bookmarks', opportunityId);
+    const bookmarkSnap = await getDoc(bookmarkRef);
+    return bookmarkSnap.exists();
+  } catch (error) {
+    console.warn("Could not check bookmark status:", error);
+    return false;
+  }
 };
 
 export const createCommunityPost = async (post: Omit<CommunityPost, 'id' | 'createdAt' | 'likes' | 'commentCount'>) => {
@@ -287,7 +295,7 @@ export const toggleFollowUser = async (currentUserId: string, targetUserId: stri
   }
 };
 
-export const getRegionalPosts = async (region: string) => {
+export const getRegionalPosts = async (region: string): Promise<CommunityPost[]> => {
   try {
     const postsRef = collection(db, 'community_posts');
     const q = query(
@@ -302,6 +310,7 @@ export const getRegionalPosts = async (region: string) => {
       ...doc.data()
     })) as CommunityPost[];
   } catch (error) {
-    handleFirestoreError(error, 'list', 'community_posts');
+    console.warn("Could not fetch regional posts:", error);
+    return [];
   }
 };

@@ -31,14 +31,19 @@ export function ProfileView({ profile, onNavigate, onSignOut, onProfileUpdate }:
 
   useEffect(() => {
     async function loadProfileData() {
-      if (auth.currentUser) {
-        setIsLoading(true);
-        const [userActs, userBooks] = await Promise.all([
-          getUserActivities(auth.currentUser.uid),
-          getUserBookmarks(auth.currentUser.uid)
-        ]);
-        setActivities(userActs);
-        setBookmarks(userBooks);
+      setIsLoading(true);
+      try {
+        if (auth.currentUser) {
+          const [userActs, userBooks] = await Promise.all([
+            getUserActivities(auth.currentUser.uid),
+            getUserBookmarks(auth.currentUser.uid)
+          ]);
+          setActivities(userActs || []);
+          setBookmarks(userBooks || []);
+        }
+      } catch (err) {
+        console.warn("Could not load profile data:", err);
+      } finally {
         setIsLoading(false);
       }
     }
